@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commercial Broiler Production Planner</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font -->
+    <style>
+        @import url('https://fonts.fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+        }
+        /* Custom scrollbar for better look */
+        #results-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        #results-container::-webkit-scrollbar-thumb {
+            background-color: #6ee7b7; /* Emerald-300 */
+            border-radius: 4px;
+        }
+        #results-container::-webkit-scrollbar-track {
+            background-color: #f0fff4; /* Minty background */
+        }
+        .card-shadow {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        /* Print Styles for clean report export */
+        @media print {
+            header, form, #download-btn-wrapper {
+                display: none !important; /* Hide input form and button when printing */
+            }
+            body {
+                background-color: white !important;
+                margin: 0;
+                padding: 0;
+            }
+            .max-w-6xl {
+                max-width: 100% !important;
+            }
+            .print\:break-inside-avoid {
+                break-inside: avoid; /* Keep weekly sections intact */
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="text-center py-6 bg-green-700 text-white rounded-t-xl card-shadow">
+            <h1 class="text-3xl font-extrabold tracking-tight md:text-4xl">Commercial Broiler Production Planner</h1>
+            <p class="mt-2 text-green-200 text-sm md:text-base">Input your flock details to generate a complete 6-week schedule and financial analysis.</p>
+            <p class="text-xs mt-1 text-green-300 font-medium">Developed by MD AKRAMUL HAUE, BCS (LIVESTOCK), DLS, BANGLADESH</p>
+        </header>
+
+        <!-- Main Content Wrapper -->
+        <div class="bg-white p-6 md:p-8 rounded-b-xl mb-8 card-shadow">
+            
+            <!-- Tab Navigation -->
+            <div class="flex border-b border-gray-200 mb-6">
+                <button id="tab-broiler" onclick="showTab('broiler')" class="px-6 py-2 text-sm font-medium border-r border-gray-200 focus:outline-none transition-colors duration-150 text-white bg-green-600 rounded-tl-lg hover:bg-green-700">Production Plan</button>
+                <button id="tab-lighting" onclick="showTab('lighting')" class="px-6 py-2 text-sm font-medium text-gray-700 focus:outline-none transition-colors duration-150 hover:bg-gray-100">Lighting Planner</button>
+                <button id="tab-feed-specs" onclick="showTab('feed-specs')" class="px-6 py-2 text-sm font-medium text-gray-700 focus:outline-none transition-colors duration-150 hover:bg-gray-100">Feed Specs</button>
+                <button id="tab-feed-mixer" onclick="showTab('feed-mixer')" class="px-6 py-2 text-sm font-medium text-gray-700 focus:outline-none transition-colors duration-150 hover:bg-gray-100 rounded-tr-lg">Feed Mixer</button>
+            </div>
+
+            <!-- Tab Content: Production Planner -->
+            <div id="broiler-tab-content" class="tab-content">
+                <form id="broilerPlannerForm" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                    <h3 class="md:col-span-4 text-xl font-bold text-gray-700 border-b pb-2 mb-4">Broiler Flock Details</h3>
+                    <!-- Flock Size Input -->
+                    <div class="md:col-span-1">
+                        <label for="b_numChicks" class="block text-sm font-medium text-gray-700 mb-2">Number of Chicks (Flock Size)</label>
+                        <input type="number" id="b_numChicks" min="1" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150" placeholder="e.g., 5000">
+                        <p id="b_chicksError" class="text-red-500 text-xs mt-1 hidden">Please enter a valid number (min 1).</p>
+                    </div>
+
+                    <!-- Received Date Input -->
+                    <div class="md:col-span-1">
+                        <label for="b_startDate" class="block text-sm font-medium text-gray-700 mb-2">Chicks Received Date (Start Date)</label>
+                        <input type="date" id="b_startDate" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150">
+                        <p id="b_dateError" class="text-red-500 text-xs mt-1 hidden">Please select today's date or a future date.</p>
+                    </div>
+                    
+                    <!-- Target Weight Input -->
+                    <div class="md:col-span-1">
+                        <label for="b_targetWeightKg" class="block text-sm font-medium text-gray-700 mb-2">Target Final Live Weight (kg)</label>
+                        <input type="number" id="b_targetWeightKg" min="0.5" step="0.05" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150" placeholder="e.g., 2.2">
+                        <p id="b_weightError" class="text-red-500 text-xs mt-1 hidden">Please enter a valid target weight.</p>
+                    </div>
+
+                    <!-- Calculate Button -->
+                    <button type="submit" id="b_generateBtn" class="w-full h-11 px-4 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-200 transform hover:scale-[1.01] shadow-md hover:shadow-lg flex items-center justify-center col-span-1 md:col-span-1">
+                        <span id="b_btnText">Generate Broiler Plan</span>
+                        <div id="b_btnSpinner" class="loading-spinner ml-2 hidden"></div>
+                    </button>
+                </form>
+                
+                <!-- Financial Inputs (Broiler) -->
+                <div class="mt-6 pt-4 border-t border-gray-200">
+                    <div class="flex items-center mb-4">
+                        <input type="checkbox" id="b_includeCosts" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                        <label for="b_includeCosts" class="ml-2 block text-sm font-semibold text-gray-700">Include P&L and Break-Even Analysis</label>
+                    </div>
+                    
+                    <div id="b_financialInputs" class="grid grid-cols-1 md:grid-cols-4 gap-6 transition-all duration-300 ease-in-out opacity-0 max-h-0 overflow-hidden">
+                        
+                        <!-- Sale Price -->
+                        <div>
+                            <label for="b_salePricePerKg" class="block text-sm font-medium text-gray-700 mb-2">Sale Price / kg Live (BDT ৳)</label>
+                            <input type="number" id="b_salePricePerKg" min="1" step="any" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150" placeholder="e.g., 180">
+                            <p id="b_salePriceError" class="text-red-500 text-xs mt-1 hidden">Required for analysis.</p>
+                        </div>
+
+                        <!-- DOC Cost -->
+                        <div>
+                            <label for="b_docCost" class="block text-sm font-medium text-gray-700 mb-2">Cost of DOC / Bird (BDT ৳)</label>
+                            <input type="number" id="b_docCost" min="1" step="any" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150" placeholder="e.g., 50">
+                            <p id="b_docCostError" class="text-red-500 text-xs mt-1 hidden">Required for analysis.</p>
+                        </div>
+
+                        <!-- Monthly Salary (Replaces Labor Cost / Bird) -->
+                        <div>
+                            <label for="b_laborCostPerBird" class="block text-sm font-medium text-gray-700 mb-2">Monthly Worker Salary (BDT ৳)</label>
+                            <input type="number" id="b_laborCostPerBird" min="0" step="any" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150" placeholder="e.g., 15000">
+                            <p id="b_laborCostError" class="text-red-500 text-xs mt-1 hidden">Required for calculation.</p>
+                        </div>
+
+                        <!-- Electricity Price (Replaces Utility Cost / Bird) -->
+                        <div>
+                            <label for="b_utilityCostPerBird" class="block text-sm font-medium text-gray-700 mb-2">Electricity Price / kWh (BDT ৳)</label>
+                            <input type="number" id="b_utilityCostPerBird" min="0" step="any" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150" placeholder="e.g., 10">
+                            <p id="b_utilityCostError" class="text-red-500 text-xs mt-1 hidden">Required for calculation.</p>
+                        </div>
+
+                        <!-- Bag Price Input -->
+                        <div>
+                            <label for="b_costPerBagBDT" class="block text-sm font-medium text-gray-700 mb-2">Price Per 50kg Feed Bag (BDT ৳)</label>
+                            <input type="number" id="b_costPerBagBDT" min="1" step="any" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150" placeholder="e.g., 3500">
+                            <p id="b_costPerBagError" class="text-red-500 text-xs mt-1 hidden">Required for analysis.</p>
+                        </div>
+
+                        <!-- Mortality Input (Optional but good for P&L) -->
+                        <div>
+                            <label for="b_mortalityRate" class="block text-sm font-medium text-gray-700 mb-2">Target Mortality Rate (%)</label>
+                            <input type="number" id="b_mortalityRate" min="0" max="100" step="0.1" value="5.0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150" placeholder="e.g., 5.0">
+                            <p id="b_mortalityError" class="text-red-500 text-xs mt-1 hidden">Please enter a valid rate.</p>
+                        </div>
+                        
+                        <!-- Placeholder for Old Non-Feed Cost (Now split) -->
+                        <div class="hidden">
+                            <input type="number" id="b_nonFeedCostPerBird" value="0">
+                        </div>
+
+
+                        
+                        <div class="md:col-span-2 flex items-center">
+                            <input type="checkbox" id="b_saveToStorage" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded" checked>
+                            <label for="b_saveToStorage" class="ml-2 block text-sm text-gray-700">Save Flock Details in Browser</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Lighting Planner (NEW TAB) -->
+            <div id="lighting-tab-content" class="tab-content hidden">
+                <h3 class="text-xl font-bold text-gray-700 border-b pb-2 mb-4">ROSS Lighting Program Schedule (Recommended)</h3>
+
+                <!-- Lighting Schedule Table -->
+                <div class="overflow-x-auto rounded-xl border border-gray-200 mb-8">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Week (Days)</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Dark Hours</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Light Intensity (Min. Lux)</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Management Goal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lighting-schedule-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="text-xl font-bold text-gray-700 border-b pb-2 mb-4 mt-8">Bulb Requirement Calculator (for Uniformity)</h3>
+                
+                <form id="lightingCalculatorForm" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                    <div class="md:col-span-4 text-sm text-gray-600">
+                        Enter your actual house size to calculate the number of bulbs needed to achieve the minimum recommended **Lux** level for each phase.
+                        (Note: Lux is Lumens/m², Lumens are Lumens/Watt. Assumes uniform placement.)
+                    </div>
+
+                    <!-- House Length -->
+                    <div>
+                        <label for="houseLength" class="block text-sm font-medium text-gray-700 mb-2">House Length (m)</label>
+                        <input type="number" id="houseLength" min="1" step="1" required value="100" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" oninput="calculateLightRequirement()">
+                    </div>
+
+                    <!-- House Width -->
+                    <div>
+                        <label for="houseWidth" class="block text-sm font-medium text-gray-700 mb-2">House Width (m)</label>
+                        <input type="number" id="houseWidth" min="1" step="1" required value="12" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" oninput="calculateLightRequirement()">
+                    </div>
+                    
+                    <!-- Bulb Type -->
+                    <div>
+                        <label for="bulbType" class="block text-sm font-medium text-gray-700 mb-2">Bulb Type (Lumen Efficiency)</label>
+                        <select id="bulbType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" onchange="calculateLightRequirement()">
+                            <option value="INCANDESCENT">Incandescent (10 lm/W)</option>
+                            <option value="CFL">CFL (50 lm/W)</option>
+                            <option value="LED">LED Broiler Grade (120 lm/W)</option>
+                        </select>
+                    </div>
+                </form>
+
+                <div id="light-results" class="mt-6 pt-4 border-t border-gray-200">
+                    <!-- Results dynamically inserted here -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Brooding Phase (30 Lux) -->
+                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-300">
+                            <p class="text-sm font-medium text-blue-700">Brooding Phase (Day 0-7) @ 30 Lux</p>
+                            <p id="brooding-bulb-count" class="text-3xl font-extrabold text-blue-600 mt-1">0</p>
+                            <p id="brooding-wattage" class="text-sm text-gray-600">Total Wattage: 0 W</p>
+                            <p class="text-xs text-gray-500 mt-2">Required for feed/water intake and early growth.</p>
+                        </div>
+                        <!-- Grower Phase (5 Lux) -->
+                        <div class="p-4 bg-green-50 rounded-lg border border-green-300">
+                            <p id="grower-phase-title" class="text-sm font-medium text-green-700">Grower/Finisher Phase (Day 8+) @ 5 Lux</p>
+                            <p id="grower-bulb-count" class="text-3xl font-extrabold text-green-600 mt-1">0</p>
+                            <p id="grower-wattage" class="text-sm text-gray-600">Total Wattage: 0 W</p>
+                            <p class="text-xs text-gray-500 mt-2">Required for FCR and welfare standards.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Feed Formulation Specs -->
+            <div id="feed-specs-tab-content" class="tab-content hidden">
+                <h3 class="text-xl font-bold text-gray-700 border-b pb-2 mb-4">Commercial Feed Specification Targets</h3>
+                <div id="feed-formulation-display" class="space-y-6">
+                    <!-- Dynamic feed cards inserted here -->
+                </div>
+            </div>
+
+            <!-- Tab Content: Feed Mixer Calculator -->
+            <div id="feed-mixer-tab-content" class="tab-content hidden">
+                <h3 class="text-xl font-bold text-gray-700 border-b pb-2 mb-4">Dynamic Feed Formulation Calculator</h3>
+                <p class="text-sm text-gray-600 mb-6">
+                    Enter the local nutritional profile and cost (BDT/kg) of your ingredients. Load a suggested mix or manually adjust percentages to achieve your targets.
+                </p>
+
+                <!-- Target and Suggested Mix Section -->
+                <div class="bg-indigo-100 p-4 rounded-xl border border-indigo-300 mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label for="mix-target-cp" class="block text-xs font-medium text-indigo-700 mb-1">Target Crude Protein (%)</label>
+                        <input type="number" id="mix-target-cp" min="18" max="24" step="0.1" value="22.0" class="w-full px-3 py-2 border border-indigo-300 rounded-lg text-sm font-semibold" oninput="calculateMix()">
+                    </div>
+                    <div>
+                        <label for="mix-target-me" class="block sanded-xs font-medium text-indigo-700 mb-1">Target ME (kcal/kg)</label>
+                        <input type="number" id="mix-target-me" min="2800" max="3300" step="10" value="3000" class="w-full px-3 py-2 border border-indigo-300 rounded-lg text-sm font-semibold" oninput="calculateMix()">
+                    </div>
+                    <div>
+                         <label for="mix-phase-select" class="block sanded-xs font-medium text-indigo-700 mb-1">Phase Quick-Select</label>
+                        <select id="mix-phase-select" class="w-full px-3 py-2 border border-indigo-300 rounded-lg text-sm font-semibold" onchange="loadTargetPhase()">
+                            <option value="custom">Custom</option>
+                            <option value="starter">Starter</option>
+                            <option value="grower">Grower</option>
+                            <option value="finisher">Finisher</option>
+                        </select>
+                    </div>
+                    <button type="button" onclick="loadSuggestedMix()" class="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition duration-150 shadow-md transform hover:scale-[1.01] flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2v2m0-2h4m-4 0H8m-6 4a8 8 0 1016 0 8 8 0 00-16 0zM12 8a4 4 0 100 8 4 4 0 000-8z"></path></svg>
+                        Load Suggested Mix
+                    </button>
+                </div>
+
+                <!-- Ingredient Input Table -->
+                <div class="overflow-x-auto rounded-xl border border-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">Ingredient</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">Local Cost (BDT/kg)</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">Crude Protein (%)</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">ME (kcal/kg)</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">Mix Percentage (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="feed-mixer-inputs" class="bg-white divide-y divide-gray-200">
+                            <!-- Rows populated dynamically here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Summary Section -->
+                <div class="mt-8 pt-4 border-t-2 border-green-300">
+                    <h4 class="text-lg font-bold text-gray-700 mb-3">Calculated Mix Analysis</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        
+                        <!-- Achieved Nutrients -->
+                        <div class="md:col-span-2 p-4 rounded-lg border border-gray-200 bg-white shadow-inner">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div id="achieved-cp" class="p-2 border-l-4 border-blue-500">
+                                    <p class="text-sm font-medium text-gray-500">Achieved Crude Protein</p>
+                                    <p class="text-xl font-extrabold text-blue-700">0.00%</p>
+                                </div>
+                                <div id="achieved-me" class="p-2 border-l-4 border-blue-500">
+                                    <p class="text-sm font-medium text-gray-500">Achieved ME</p>
+                                    <p class="text-xl font-extrabold text-blue-700">0 kcal/kg</p>
+                                </div>
+                            </div>
+                            <div id="nutrient-alert" class="mt-3 p-2 rounded-lg text-sm font-semibold hidden"></div>
+                        </div>
+
+                        <!-- Cost and Total Percent -->
+                        <div class="md:col-span-1 p-4 rounded-lg border border-gray-200 bg-white shadow-inner">
+                            <p class="text-sm font-medium text-gray-500">Total Mix Percentage:</p>
+                            <p id="total-percent-display" class="text-3xl font-extrabold text-indigo-600">0.00%</p>
+                             <p class="text-sm font-medium text-gray-500 mt-2">Estimated Cost / kg:</p>
+                            <p id="total-cost-display" class="text-2xl font-extrabold text-red-600">৳ 0.00</p>
+                            <div id="percent-alert" class="mt-2 p-2 rounded-lg text-sm font-semibold hidden"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Container -->
+        <div id="results-container" class="mt-8">
+            <!-- Results will be dynamically inserted here -->
+            <div id="initial-message" class="text-center p-12 bg-white rounded-xl text-gray-500">
+                <svg class="w-12 h-12 mx-auto mb-3 text-green-500" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                <p class="text-lg font-medium">Enter the flock size and start date above to view your personalized 6-week broiler production schedule and financial forecast.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA MODELS ---
+        
+        // PEF Constants and Standards
+        const PEF_STANDARDS = {
+            excellent: { min: 400, color: 'text-green-600', bg: 'bg-green-100', border: 'border-green-300', label: 'Excellent' },
+            good: { min: 350, max: 399, color: 'text-blue-600', bg: 'bg-blue-100', border: 'border-blue-300', label: 'Good' },
+            average: { min: 300, max: 349, color: 'text-yellow-600', bg: 'bg-yellow-100', border: 'border-yellow-300', label: 'Average' },
+            poor: { min: 250, max: 299, color: 'text-orange-600', bg: 'bg-orange-100', border: 'border-orange-300', label: 'Poor' },
+            critical: { max: 249, color: 'text-red-600', bg: 'bg-red-100', border: 'border-red-300', label: 'Critical' }
+        };
+
+        // Feed Formulation Data (Used for Feed Specs tab)
+        const feedFormulations = {
+            starter: {
+                label: 'Starter (Day 0-14)',
+                crudeProtein: "22-24%",
+                metabolizableEnergy: "3000 kcal/kg",
+                ingredients: ["Corn", "Soybean Meal", "Fish Meal", "Premix", "Dicalcium Phosphate"],
+                targetCP: 22.0, 
+                targetME: 3000,
+                costPerKg: 0.45
+            },
+            grower: {
+                label: 'Grower (Day 15-35)',
+                crudeProtein: "20-22%",
+                metabolizableEnergy: "3100 kcal/kg",
+                ingredients: ["Corn", "Soybean Meal", "Bone Meal", "Oil/Fat"],
+                targetCP: 20.0, 
+                targetME: 3100,
+                costPerKg: 0.42
+            },
+            finisher: {
+                label: 'Finisher (Day 36-42)',
+                crudeProtein: "18-20%",
+                metabolizableEnergy: "3200 kcal/kg", 
+                ingredients: ["Corn", "Soybean Meal", "Oil/Fat", "Salt"],
+                targetCP: 18.0, 
+                targetME: 3200,
+                costPerKg: 0.40
+            }
+        };
+
+        // Feed Ingredients for Mixer (Common in Bangladesh) with estimated default values
+        const feedIngredients = [
+            { name: 'Maize (Corn)', defaultCP: 8.5, defaultME: 3300, defaultCost: 40.00, initialPercent: 55.00 },
+            { name: 'Soybean Meal (SBM)', defaultCP: 44.0, defaultME: 2250, defaultCost: 85.00, initialPercent: 30.00 },
+            { name: 'Rice Polish/Bran', defaultCP: 13.0, defaultME: 2700, defaultCost: 25.00, initialPercent: 5.00 }, 
+            { name: 'Fish Meal', defaultCP: 60.0, defaultME: 2800, defaultCost: 150.00, initialPercent: 0.00 },
+            { name: 'Meat & Bone Meal (MBM)', defaultCP: 50.0, defaultME: 2600, defaultCost: 90.00, initialPercent: 0.00 },
+            { name: 'Oil/Fat (Energy)', defaultCP: 0.0, defaultME: 7000, defaultCost: 110.00, initialPercent: 5.00 }, 
+            { name: 'Mustard Oil Cake (MOC)', defaultCP: 35.0, defaultME: 2500, defaultCost: 50.00, initialPercent: 0.00 },
+            { name: 'Limestone (Ca)', defaultCP: 0.0, defaultME: 0, defaultCost: 5.00, initialPercent: 1.20 }, 
+            { name: 'Dicalcium Phosphate (DCP)', defaultCP: 0.0, defaultME: 0, defaultCost: 60.00, initialPercent: 1.00 },
+            { name: 'Salt', defaultCP: 0.0, defaultME: 0, defaultCost: 15.00, initialPercent: 0.30 },
+            { name: 'Vitamin Premix', defaultCP: 0.0, defaultME: 0, defaultCost: 300.00, initialPercent: 0.20 }, 
+            { name: 'Mineral Premix', defaultCP: 0.0, defaultME: 0, defaultCost: 250.00, initialPercent: 0.10 },
+            { name: 'Lysine', defaultCP: 0.0, defaultME: 0, defaultCost: 600.00, initialPercent: 0.10 }, 
+            { name: 'Methionine', defaultCP: 0.0, defaultME: 0, defaultCost: 800.00, initialPercent: 0.10 }, 
+            { name: 'Toxin Binder/Enzyme', defaultCP: 0.0, defaultME: 0, defaultCost: 200.00, initialPercent: 2.00 }
+        ];
+
+        // Suggested Mixes Data (Fixed percentages for quick loading)
+        const SUGGESTED_MIXES = {
+            starter: {
+                targetCP: 22.5, targetME: 3050,
+                'Maize(Corn)': 52.00,
+                'SoybeanMeal(SBM)': 34.00,
+                'RicePolish/Bran': 5.00,
+                'FishMeal': 3.00,
+                'Meat&BoneMeal(MBM)': 0.00,
+                'Oil/Fat(Energy)': 1.00,
+                'MustardOilCake(MOC)': 0.00,
+                'Limestone(Ca)': 1.20,
+                'DicalciumPhosphate(DCP)': 1.00,
+                'Salt': 0.30,
+                'VitaminPremix': 0.20,
+                'MineralPremix': 0.10,
+                'Lysine': 0.50,
+                'Methionine': 0.20,
+                'ToxinBinder/Enzyme': 1.50
+            },
+            grower: {
+                targetCP: 20.5, targetME: 3100,
+                'Maize(Corn)': 60.00,
+                'SoybeanMeal(SBM)': 25.00,
+                'RicePolish/Bran': 3.00,
+                'FishMeal': 1.00,
+                'Meat&BoneMeal(MBM)': 1.00,
+                'Oil/Fat(Energy)': 3.50,
+                'MustardOilCake(MOC)': 0.00,
+                'Limestone(Ca)': 1.00,
+                'DicalciumPhosphate(DCP)': 0.90,
+                'Salt': 0.35,
+                'VitaminPremix': 0.15,
+                'MineralPremix': 0.10,
+                'Lysine': 0.30,
+                'Methionine': 0.10,
+                'ToxinBinder/Enzyme': 3.60
+            },
+            finisher: {
+                targetCP: 18.5, targetME: 3200,
+                'Maize(Corn)': 65.00,
+                'SoybeanMeal(SBM)': 18.00,
+                'RicePolish/Bran': 2.00,
+                'FishMeal': 0.00,
+                'Meat&BoneMeal(MBM)': 0.00,
+                'Oil/Fat(Energy)': 6.00,
+                'MustardOilCake(MOC)': 0.00,
+                'Limestone(Ca)': 0.80,
+                'DicalciumPhosphate(DCP)': 0.80,
+                'Salt': 0.35,
+                'VitaminPremix': 0.10,
+                'MineralPremix': 0.10,
+                'Lysine': 0.20,
+                'Methionine': 0.05,
+                'ToxinBinder/Enzyme': 6.60
+            }
+        };
+
+
+        // Broiler Standards (fixed feed model for a 42-day cycle)
+        const BROILER_SCHEDULE_WEEKS = [
+            // Updated Medicine List with Brand Names and Dosage from the document
+            {
+                week: 1, days: '1 - 7', daysOffset: 6, avgDailyFeedPerBird_g: 25, cumFeedPerBird_kg: 0.175, targetWeight_kg: 0.150, targetADG_g: 21.4, targetUniformity_percent: 85, feedType: 'Pre-Starter/Starter Crumble (Cobb Diet Type 1)',
+                lighting: { darkHours: 'Gradually 1 to 4-6', lux: '30-40 Lux' },
+                medicine: [
+                    { type: 'Supplement', desc: 'Electrolytes and Multivitamins (Day 1-3) to counter stress. **Example: VITALYTE, Electrovit.**' }, 
+                    { type: 'Prophylaxis', desc: 'Probiotic/Acidifier to establish gut flora. **Example: Acidifier/Organic Acids in water.**' }
+                ],
+                threats: ['Starve-outs', 'Dehydration', 'Chilling/Overheating', 'Omphalitis (Navel-Yolk Sac Infection)'],
+                tasks: [
+                    { day: 1, type: 'Management', desc: 'Brooding setup: **Floor Temp: 30-32°C (86-90°F)**. Ambient Temp: 32-34°C (90-93°F). RH < 70%. **Check Crop Fill (95% at 24h).**' }, 
+                    { day: 3, type: 'Management', desc: 'Lower Ambient Temp to 30-32°C (86-90°F). Check ventilation. Ensure CO₂ < 3000 ppm, Ammonia < 10 ppm.' }, 
+                    { day: 7, type: 'Vaccination', desc: 'First New Castle Disease (ND) and Infectious Bronchitis (IB) vaccination via drinking water.' }
+                ],
+            },
+            {
+                week: 2, days: '8 - 14', daysOffset: 13, avgDailyFeedPerBird_g: 45, cumFeedPerBird_kg: 0.490, targetWeight_kg: 0.350, targetADG_g: 28.5, targetUniformity_percent: 82, feedType: 'Starter Crumble/Pellet',
+                lighting: { darkHours: 'Min. 4-6', lux: '5-10 Lux' },
+                medicine: [
+                    { type: 'Supplement', desc: 'Liver tonic/Kidney flush (Day 8 or 9) after first vaccination. **Example: Nephrotonic** (Used in IBD treatment, beneficial here).' }, 
+                    { type: 'Prophylaxis', desc: 'Coccidiostat (e.g., **Amprolium** or **Toltrazuril**) in water if required by farm history (check feed tag). Dosage per product instructions.' }
+                ],
+                threats: ['Coccidiosis (early signs)', 'Colibacillosis', 'Mortality Spike', 'Gumboro Disease (IBD) risk'],
+                tasks: [
+                    { day: 8, type: 'Management', desc: 'Lower Ambient Temp to 28-30°C (82-86°F). Expand brooding area. Ensure uniform **Litter Moisture (< 35%)**.' }, 
+                    { day: 10, type: 'Vaccination', desc: 'First Infectious Bursal Disease (IBD) / Gumboro vaccination via drinking water.' }, 
+                    { day: 14, type: 'Management', desc: 'Check uniformity and mortality. Provide full house access.' }
+                ],
+            },
+            {
+                week: 3, days: '15 - 21', daysOffset: 20, avgDailyFeedPerBird_g: 65, cumFeedPerBird_kg: 0.945, targetWeight_kg: 0.650, targetADG_g: 42.8, targetUniformity_percent: 80, feedType: 'Grower Pellet (Cobb Diet Type 2 - Maximizing Lean Mass)',
+                lighting: { darkHours: 'Min. 4-6', lux: '5-10 Lux' },
+                medicine: [
+                    { type: 'Supplement', desc: 'Gut conditioner/Acidifier/Probiotic as needed for growth. **Example: Probiotics or Acidifiers.**' },
+                    { type: 'Antimicrobial Note', desc: '**Consult Vet for prescription antimicrobial if Colibacillosis is suspected.** (e.g., Enrofloxacin or Florfenicol).' }
+                ],
+                threats: ['Coccidiosis (peak risk)', 'Ascites (Pulmonary Hypertension Syndrome)', 'Air Sacculitis'],
+                tasks: [
+                    { day: 15, type: 'Management', desc: 'Lower Ambient Temp to 26-28°C (79-82°F). Focus on ventilation to control ammonia (keep < 10 ppm).' }, 
+                    { day: 20, type: 'Vaccination', desc: 'Second IBD / Gumboro Booster vaccination (if required by local program).' }, 
+                    { day: 21, type: 'Management', desc: 'Monitor Water Intake (2:1 Water:Feed Ratio Target). Transition to Grower feed.' }
+                ],
+            },
+            {
+                week: 4, days: '22 - 28', daysOffset: 27, avgDailyFeedPerBird_g: 87.5, cumFeedPerBird_kg: 1.550, targetWeight_kg: 1.100, targetADG_g: 64.2, targetUniformity_percent: 78, feedType: 'Grower Pellet',
+                lighting: { darkHours: 'Min. 4-6', lux: '5-10 Lux' },
+                medicine: [
+                    { type: 'Supplement', desc: 'Vitamin C + Electrolytes if heat stress is a risk. **Example: Vit C (1-2g/L) and/or Immuno-stimulant.**' }, 
+                    { type: 'Respiratory Support', desc: 'Mucolytic drugs (e.g., **Bromhexine @ 0.5 mg/kg bwt**) with Essential oils (Eucalyptus oil) if respiratory signs appear.' }
+                ],
+                threats: ['Respiratory distress (CRD)', 'Heat stress (if ambient temperature is high)', 'Footpad Dermatitis'],
+                tasks: [
+                    { day: 22, type: 'Management', desc: 'Target Ambient Temp 24-26°C (75-79°F). Aggressive ventilation to remove moisture and ammonia. Monitor water consumption.' }, 
+                    { day: 28, type: 'Vaccination', desc: 'ND/IB Booster vaccination (if required by local program).' }
+                ],
+            },
+            {
+                week: 5, days: '29 - 35', daysOffset: 34, avgDailyFeedPerBird_g: 110, cumFeedPerBird_kg: 2.320, targetWeight_kg: 1.700, targetADG_g: 85.7, targetUniformity_percent: 75, feedType: 'Finisher Pellet (Cobb Diet Type 3 - Cost Optimization)',
+                lighting: { darkHours: 'Min. 4-6', lux: '5-10 Lux' },
+                medicine: [
+                    { type: 'Health', desc: 'If Ascites is a risk, consider **Sodium-bi-carbonate @ 2-5g/L** drinking water, Vitamin C/E/Se, or **Furosemide @ 40mg/L** (vet prescription).' },
+                    { type: 'Management', desc: 'Ensure Toxin Binder/Adsorbent is used if Mycotoxicosis is a risk.' }
+                ],
+                threats: ['Ammonia burn (eye and footpad lesions)', 'Lame/Locomotor issues', 'Sudden Death Syndrome (SDS)'],
+                tasks: [
+                    { day: 29, type: 'Management', desc: 'Maintain temperature around 22°C (72°F). Increase cooling and air movement. Prepare for feed withdrawal logistics.' }, 
+                    { day: 35, type: 'Management', desc: 'Transition to Finisher feed. Weigh sample birds to track growth performance.' }
+                ],
+            },
+            {
+                week: 6, days: '36 - 42', daysOffset: 41, avgDailyFeedPerBird_g: 130, cumFeedPerBird_kg: 3.160, targetWeight_kg: 2.200, targetADG_g: 71.4, targetUniformity_percent: 70, feedType: 'Finisher Pellet (Withdrawal)',
+                lighting: { darkHours: '1 hour dark', lux: '15 Lux' }, // Pre-catch period
+                medicine: [
+                    { type: 'Crucial Task', desc: '**Ensure NO medication** is administered that requires a withdrawal period past Day 39. Only clean water.' },
+                    { type: 'Support', desc: 'Use **Vitamin K** if any previous disease (like Coccidiosis) caused bleeding risk. **Hematinic** if necessary.' }
+                ],
+                threats: ['Pre-slaughter stress', 'High ambient temperature mortality', 'Condemnation risk due to withdrawal failure'],
+                tasks: [
+                    { day: 39, type: 'Management', desc: 'Withdrawal Period starts: Stop all antibiotic or medicated feed (usually 3-5 days before slaughter). Only use clean water.' }, 
+                    { day: 42, type: 'Management', desc: 'Target Market Age/Slaughter. **Optimum Feed Withdrawal: 8-12 hours**.' }
+                ],
+            }
+        ];
+
+        // Current Inventory Status (Used for simulated real-time checks)
+        const inventory = {
+            feed: {
+                currentStock: 5000, // kg
+                consumptionRate: 800, // kg/day (Used as a general metric if flock size isn't calculated yet)
+                reorderPoint: 2000
+            },
+            vaccines: {
+                currentStock: 5000, // doses
+                consumptionRate: 1000, // doses/week
+                reorderPoint: 1000
+            }
+        };
+
+        // Key Performance Indicators (KPIs)
+        const kpis = {
+            feedConversionRatio: 1.6,   // Target FCR
+            averageDailyGain: 65,       // grams per day
+            mortalityRate: 0.03,        // 3% target
+            uniformity: 85,             // Percentage
+            // productionEfficiency: 350   // PE factor target - DELETED
+        };
+        
+        // --- NEW FINANCIAL ASSUMPTIONS ---
+        const LABOR_RATE_CHICKS_PER_WORKER = 5000;
+        const KWH_PER_BIRD_CYCLE = 1.0; // kWh/bird for 42 days (Ventilation/Lighting/Heating)
+        const TOTAL_CYCLE_DAYS = 42;
+        const AVG_DAYS_IN_MONTH = 30;
+
+
+        // Lighting Constants
+        const BULB_EFFICIENCY = {
+            INCANDESCENT: { lm_per_w: 10, w_per_unit: 100 },
+            CFL: { lm_per_w: 50, w_per_unit: 20 },
+            LED: { lm_per_w: 120, w_per_unit: 9 }, // Assuming a high-efficiency 9W bulb
+        };
+        const LUX_BROODING_MAX = 30; // Lux needed in the brooding area (Week 1)
+        const LUX_GROWER_MIN = 5; // Lux needed after Week 1
+        
+        // --- ROSS Lighting Schedule for Lighting Planner Tab (Based on Handbook) ---
+        const ROSS_LIGHTING_SCHEDULE = [
+            { week: 1, days: '1-7', darkHours: 'Gradually increase from 1 to 4-6 hours by Day 7', lux: '30-40 Lux (2.8-3.7 fc)', goal: 'Maximize feed/water intake and early development. 23 hours light for Day 1.' },
+            { week: 2, days: '8-14', darkHours: 'Min. 4 hours (up to 6 hours) continuous dark', lux: '5-10 Lux (0.5-0.9 fc)', goal: 'Establish rest cycle for skeletal/immune development. Optimize FCR.' },
+            { week: 3, days: '15-21', darkHours: 'Min. 4 hours (up to 6 hours) continuous dark', lux: '5-10 Lux (0.5-0.9 fc)', goal: 'Maintain FCR and reduce stress-related activity.' },
+            { week: 4, days: '22-28', darkHours: 'Min. 4 hours (up to 6 hours) continuous dark', lux: '5-10 Lux (0.5-0.9 fc)', goal: 'Focus on growth and environmental management (ammonia/litter).' },
+            { week: 5, days: '29-35', darkHours: 'Min. 4 hours (up to 6 hours) continuous dark', lux: '5-10 Lux (0.5-0.9 fc)', goal: 'Final growth push before withdrawal.' },
+            { week: 6, days: '36-42', darkHours: '3 days pre-catch: 1 hour dark', lux: '5-10 Lux (0.5-0.9 fc) min', goal: 'Pre-processing management. 23 hours light to stabilize feed intake and keep birds calm.' }
+        ];
+        
+        // --- SEASONAL ALERTS (NEW DATA) ---
+        const seasonalCalendar = {
+            "Summer (Mar-Jun)": "Heat stress management, increased ventilation",
+            "Monsoon (Jul-Oct)": "Humidity control, disease prevention", 
+            "Winter (Nov-Feb)": "Brooding management, temperature control"
+        };
+        const weatherAlerts = {
+            summer: "তাপমাত্রা বেশি - পানির সরবরাহ দ্বিগুণ করুন (Increase water supply)",
+            monsoon: "বর্ষাকাল - লিটারের আদ্রতা নিয়ন্ত্রণ করুন (Control litter moisture)", 
+            winter: "শীতকাল - ব্রুডিং তাপমাত্রা বাড়ান (Increase brooding temperature)"
+        };
+
+
+        // --- CONSTANTS FOR AREA CALCULATION (From Cobb Guide) ---
+        const MAX_DENSITY_KG_PER_M2 = 42; // Max live weight density (kg/m^2)
+        const BROODING_DENSITY_BIRDS_PER_M2 = 50; // Max chick density for brooding (Week 1, Day 0-7)
+
+        // Utility function to add days to a Date object.
+        function addDays(date, days) {
+            const result = new Date(date);
+            result.setDate(result.getDate() + days);
+            return result;
+        }
+
+        // Utility function to format date nicely.
+        function formatDate(date) {
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        // Calculates the required number of 100W incandescent bulbs for brooding
+        function calculateBroodingLights(requiredAreaM2) {
+            // Constants:
+            // Lumen (lm) = Lux (lx) * Area (m^2)
+            // Lux = Lumens / Area (m^2)
+            // 100W Incandescent (old style) -> ~1000 Lumens (10 lm/W)
+            
+            const requiredLux = LUX_BROODING_MAX; // 30 Lux for brooding area
+            const bulbLumens = BULB_EFFICIENCY.INCANDESCENT.lm_per_w * BULB_EFFICIENCY.INCANDESCENT.w_per_unit; // 10 lm/W * 100W = 1000 lm
+
+            // Total Lumens needed for the required area:
+            const totalLumensNeeded = requiredLux * requiredAreaM2;
+
+            // Number of bulbs:
+            const numBulbs = Math.ceil(totalLumensNeeded / bulbLumens);
+            
+            // Safety check for tiny areas/flocks
+            return Math.max(1, numBulbs);
+        }
+        
+        /**
+         * Determines the current season in Bangladesh based on the month (GMT +6 reference).
+         * @returns {string} 'summer', 'monsoon', or 'winter'.
+         */
+        function getCurrentSeason() {
+            const date = new Date();
+            const month = date.getMonth(); // 0 = Jan, 11 = Dec
+
+            // Custom Seasonal Mapping based on provided calendar
+            // Winter (Nov, Dec, Jan, Feb) -> 10, 11, 0, 1
+            // Summer (Mar, Apr, May, Jun) -> 2, 3, 4, 5
+            // Monsoon (Jul, Aug, Sep, Oct) -> 6, 7, 8, 9
+            
+            if (month === 10 || month === 11 || month === 0 || month === 1) { // Nov, Dec, Jan, Feb
+                return 'winter';
+            } else if (month >= 2 && month <= 5) { // Mar, Apr, May, Jun
+                return 'summer';
+            } else { // Jul, Aug, Sep, Oct
+                return 'monsoon';
+            }
+        }
+        
+        /**
+         * Generates the HTML for the seasonal alert based on the current season.
+         */
+        function generateSeasonalAlertHTML() {
+            const season = getCurrentSeason();
+            const alertText = weatherAlerts[season];
+            let colorClass = '';
+            let icon = '';
+
+            if (season === 'summer') {
+                colorClass = 'bg-red-100 border-red-400 text-red-800';
+                icon = `<svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zM9 14a1 1 0 102 0 1 1 0 00-2 0z"/></svg>`; // Sun
+            } else if (season === 'monsoon') {
+                colorClass = 'bg-blue-100 border-blue-400 text-blue-800';
+                icon = `<svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm-1 12a1 1 0 102 0v-6a1 1 0 10-2 0v6zM10 8a1 1 0 100-2 1 1 0 000 2z"/></svg>`; // Rain
+            } else {
+                 colorClass = 'bg-yellow-100 border-yellow-400 text-yellow-800';
+                 icon = `<svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zm-1 14a1 1 0 102 0v-1a1 1 0 10-2 0v1zM10 8a1 1 0 011 1v2a1 1 0 11-2 0V9a1 1 0 011-1z" clip-rule="evenodd"></path></svg>`; // Snowflake
+            }
+
+            return `
+                <div class="mt-4 p-3 rounded-lg ${colorClass} flex items-center print:hidden">
+                    ${icon}
+                    <p class="text-sm font-bold">আজকের আবহাওয়া পরামর্শ: ${alertText}</p>
+                </div>
+            `;
+        }
+
+        // PEF Calculation Function
+        function calculatePEF(liveWeight_kg, survivalRate, ageDays, FCR) {
+            /**
+             * Production Efficiency Factor Formula (Livability as decimal 0-1):
+             * PEF = (Live Weight × Survival Rate × 100) / (Age × FCR)
+             */
+            
+            if (ageDays <= 0 || FCR <= 0) return 0;
+            
+            // Survival Rate * 100 gives Livability in percentage (e.g., 0.95 -> 95)
+            const pef = (liveWeight_kg * survivalRate * 100) / (ageDays * FCR);
+            return Math.round(pef * 10) / 10; // Round to 1 decimal
+        }
+
+        // Get PEF Rating
+        function getPEFRating(pefValue) {
+            if (pefValue >= PEF_STANDARDS.excellent.min) return PEF_STANDARDS.excellent;
+            if (pefValue >= PEF_STANDARDS.good.min) return PEF_STANDARDS.good;
+            if (pefValue >= PEF_STANDARDS.average.min) return PEF_STANDARDS.average;
+            if (pefValue >= PEF_STANDARDS.poor.min) return PEF_STANDARDS.poor;
+            return PEF_STANDARDS.critical;
+        }
+
+        /**
+         * Performs inventory checks for feed and vaccines based on initial flock size and demand.
+         */
+        function checkInventory(startDate, numChicks, week1FeedDemand_kg) {
+            const results = [];
+            const currentDay = new Date();
+            const daysUntilStart = Math.ceil((startDate.getTime() - currentDay.getTime()) / (1000 * 60 * 60 * 24));
+            
+            // --- Feed Check ---
+            
+            // Use Week 1 demand to calculate an approximate average daily consumption rate
+            const feedConsumptionRate_kg_day = week1FeedDemand_kg / 7;
+
+            const daysUntilDepletion_feed = inventory.feed.currentStock / feedConsumptionRate_kg_day;
+            const depletionDate_feed = addDays(currentDay, daysUntilDepletion_feed);
+
+            let feedStatusClass = 'bg-green-50 border-green-200 text-green-700';
+            let feedStatusIcon = `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>`;
+            let feedStatusMessage = `Stock is healthy (Est. supply for ${daysUntilDepletion_feed.toFixed(0)} days).`;
+
+            if (inventory.feed.currentStock < inventory.feed.reorderPoint) {
+                feedStatusClass = 'bg-red-100 border-red-400 text-red-800';
+                feedStatusIcon = `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8.257 3.341a1 1 0 00.742 0l4.086-1.554A1 1 0 0013.25 1h-6.5a1 1 0 00-.743 1.787l4.086 1.554zM2 9a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V9zm4 1a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>`;
+                feedStatusMessage = `**REORDER REQUIRED!** Below reorder point of ${inventory.feed.reorderPoint.toLocaleString()} kg.`;
+            } else if (inventory.feed.currentStock < (feedConsumptionRate_kg_day * (daysUntilStart + 10))) {
+                    // Warning if current stock covers less than 10 days of operation post-placement
+                feedStatusClass = 'bg-yellow-100 border-yellow-400 text-yellow-800';
+                feedStatusIcon = `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8.257 3.341a1 1 0 00.742 0l4.086-1.554A1 1 0 0013.25 1h-6.5a1 1 0 00-.743 1.787l4.086 1.554zM2 9a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V9zm4 1a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>`;
+                feedStatusMessage = `Stock is low (Est. supply until ${formatDate(depletionDate_feed)}). Consider reordering soon.`;
+            }
+
+
+            results.push(`
+                <div class="p-3 ${feedStatusClass} rounded-lg flex items-center mb-2">
+                    <div class="mr-2">${feedStatusIcon}</div>
+                    <div>
+                        <p class="text-sm font-bold">Feed Inventory (${inventory.feed.currentStock.toLocaleString()} kg):</p>
+                        <p class="text-xs">${feedStatusMessage}</p>
+                    </div>
+                </div>
+            `);
+
+            // --- Vaccine Check (Day 7 vaccine is 1st critical need) ---
+            
+            let vaccineDemand_day7 = numChicks; // Assuming 1 dose per bird
+            let daysOfCoverage_vaccine = (inventory.vaccines.currentStock / (vaccineDemand_day7 / 7)) * daysUntilStart; 
+            
+            let vaccineStatusClass = 'bg-green-50 border-green-200 text-green-700';
+            let vaccineStatusIcon = `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>`;
+            let vaccineStatusMessage = `Stock is healthy for Day 7 needs (${inventory.vaccines.currentStock.toLocaleString()} doses available).`;
+
+            if (inventory.vaccines.currentStock < vaccineDemand_day7 || inventory.vaccines.currentStock < inventory.vaccines.reorderPoint) {
+                vaccineStatusClass = 'bg-red-100 border-red-400 text-red-800';
+                vaccineStatusIcon = `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8.257 3.341a1 1 0 00.742 0l4.086-1.554A1 1 0 0013.25 1h-6.5a1 1 0 00-.743 1.787l4.086 1.554zM2 9a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V9zm4 1a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>`;
+                vaccineStatusMessage = `**URGENT: VACCINE SHORTAGE!** You need ${vaccineDemand_day7.toLocaleString()} doses for Day 7. Order immediately.`;
+            }
+
+            results.push(`
+                <div class="p-3 ${vaccineStatusClass} rounded-lg flex items-center">
+                    <div class="mr-2">${vaccineStatusIcon}</div>
+                    <div>
+                        <p class="text-sm font-bold">Vaccine Inventory (Day 7 ND/IB):</p>
+                        <p class="text-xs">${vaccineStatusMessage}</p>
+                    </div>
+                </div>
+            `);
+
+            return results.join('');
+        }
+        
+        // IIFE to define functions globally before DOMContentLoaded
+        (() => {
+            
+            function initializePEFDashboard(targetWeightKg, survivalRate, slaughterAgeDays, FCR) {
+                // Set defaults for Manual PEF Calculator based on the generated plan
+                document.getElementById('pef-weight').value = targetWeightKg.toFixed(2);
+                document.getElementById('pef-survival').value = (survivalRate * 100).toFixed(1);
+                document.getElementById('pef-age').value = slaughterAgeDays;
+                document.getElementById('pef-fcr').value = FCR.toFixed(3);
+
+                // Calculate and render the initial result
+                const PEF = calculatePEF(targetWeightKg, survivalRate, slaughterAgeDays, FCR);
+                const rating = getPEFRating(PEF);
+                renderPEFResult(PEF, rating, targetWeightKg, survivalRate * 100, slaughterAgeDays, FCR);
+            }
+
+            function initApp() {
+                // Broiler Initialization
+                const b_savedData = localStorage.getItem('broilerPlannerData');
+                if (b_savedData) {
+                    const data = JSON.parse(b_savedData);
+                    document.getElementById('b_numChicks').value = data.numChicks || '';
+                    document.getElementById('b_startDate').value = data.startDate || '';
+                    document.getElementById('b_targetWeightKg').value = data.targetWeightKg || 2.2; 
+                    if (data.includeCosts) {
+                        document.getElementById('b_includeCosts').checked = true;
+                        document.getElementById('b_salePricePerKg').value = data.salePricePerKg || '';
+                        document.getElementById('b_docCost').value = data.docCost || '';
+                        // Load new labor/utility inputs
+                        document.getElementById('b_laborCostPerBird').value = data.laborCostPerBird || '';
+                        document.getElementById('b_utilityCostPerBird').value = data.utilityCostPerBird || '';
+                        document.getElementById('b_costPerBagBDT').value = data.costPerBagBDT || '';
+                        document.getElementById('b_mortalityRate').value = data.mortalityRate || 5.0;
+                    }
+                } else {
+                    document.getElementById('b_targetWeightKg').value = 2.2; 
+                }
+                
+                // Global initialization
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('b_startDate').setAttribute('min', today);
+
+                // Event Listeners
+                document.getElementById('b_includeCosts').addEventListener('change', () => toggleFinancialInputs('broiler'));
+                
+                document.getElementById('broilerPlannerForm').addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    generateBroilerSchedule();
+                });
+
+                // Initial mixer setup and rendering
+                setupFeedMixer();
+                
+                // Initial view
+                toggleFinancialInputs('broiler');
+                showTab('broiler'); // Ensure the broiler tab is shown on load
+                
+                // Initial calculation for Lighting Planner tab
+                renderLightingSchedule();
+                calculateLightRequirement();
+                
+                // Export the manual calculator function
+                // window.calculateManualPEF = calculateManualPEF; // Removed PEF
+            }
+
+            document.addEventListener('DOMContentLoaded', initApp);
+
+            // Exported functions for onclick attributes
+            window.printReport = printReport;
+            window.showTab = showTab;
+            window.calculateMix = calculateMix;
+            window.loadTargetPhase = loadTargetPhase; 
+            window.loadSuggestedMix = loadSuggestedMix; // Export the new loader function
+            window.calculateLightRequirement = calculateLightRequirement; // Export the new lighting calculator
+
+            // --- TAB SWITCHING LOGIC ---
+            function showTab(tabName) {
+                // Hide all tab contents
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+
+                // Deactivate all buttons
+                document.querySelectorAll('.flex > button').forEach(button => {
+                    button.classList.remove('bg-green-600', 'text-white', 'hover:bg-green-700');
+                    button.classList.add('bg-white', 'text-gray-700', 'hover:bg-gray-100');
+                });
+                
+                // Show the selected tab content
+                const selectedContent = document.getElementById(`${tabName}-tab-content`);
+                if (selectedContent) {
+                    selectedContent.classList.remove('hidden');
+                }
+
+                // Activate the selected button
+                const selectedButton = document.getElementById(`tab-${tabName}`);
+                if (selectedButton) {
+                    selectedButton.classList.remove('bg-white', 'text-gray-700', 'hover:bg-gray-100');
+                    selectedButton.classList.add('bg-green-600', 'text-white', 'hover:bg-green-700');
+                }
+                
+                // Clear results container and show initial message on non-broiler tabs
+                const resultsContainer = document.getElementById('results-container');
+                if (tabName !== 'broiler') {
+                    resultsContainer.innerHTML = '';
+                    const initialMessage = document.createElement('div');
+                    initialMessage.id = 'initial-message';
+                    initialMessage.className = 'text-center p-12 bg-white rounded-xl text-gray-500';
+                    initialMessage.innerHTML = `
+                        <svg class="w-12 h-12 mx-auto mb-3 text-green-500" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        <p class="lg font-medium">View detailed specifications for your feed here.</p>
+                    `;
+                    resultsContainer.appendChild(initialMessage);
+                    
+                    // Specific content rendering for the Feed Specs tab
+                    if (tabName === 'feed-specs') {
+                        renderFeedFormulations();
+                    }
+                    // Specific content rendering for the Feed Mixer tab
+                    if (tabName === 'feed-mixer') {
+                        // Recalculate and re-render the mixer view
+                        setupFeedMixer(); 
+                        calculateMix();
+                    }
+                } else {
+                    // When switching back to broiler, re-render the last plan if data exists
+                    const b_savedData = localStorage.getItem('broilerPlannerData');
+                    if (b_savedData) {
+                        const data = JSON.parse(b_savedData);
+                        if (data.numChicks && data.startDate && data.targetWeightKg) {
+                            generateBroilerSchedule();
+                        }
+                    }
+                }
+            }
+            
+            // --- LIGHTING PLANNER LOGIC ---
+
+            function renderLightingSchedule() {
+                const container = document.getElementById('lighting-schedule-body');
+                let html = ROSS_LIGHTING_SCHEDULE.map(item => `
+                    <tr>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${item.week} (${item.days})</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${item.darkHours}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${item.lux}</td>
+                        <td class="px-3 py-2 text-sm text-gray-700">${item.goal}</td>
+                    </tr>
+                `).join('');
+                container.innerHTML = html;
+            }
+
+            function calculateLightRequirement() {
+                const length = parseFloat(document.getElementById('houseLength').value) || 0;
+                const width = parseFloat(document.getElementById('houseWidth').value) || 0;
+                const bulbKey = document.getElementById('bulbType').value;
+
+                if (length <= 0 || width <= 0) {
+                    document.getElementById('brooding-bulb-count').textContent = 'N/A';
+                    document.getElementById('grower-bulb-count').textContent = 'N/A';
+                    document.getElementById('brooding-wattage').textContent = 'Total Wattage: N/A';
+                    document.getElementById('grower-wattage').textContent = 'Total Wattage: N/A';
+                    return;
+                }
+
+                const houseArea = length * width;
+                const efficiency = BULB_EFFICIENCY[bulbKey];
+
+                // 1. Calculate Lumens needed for target Lux
+                // Lumen (lm) = Lux (lx) * Area (m^2)
+                const lumensBrooding = LUX_BROODING_MAX * houseArea;
+                const lumensGrower = LUX_GROWER_MIN * houseArea;
+
+                // 2. Calculate Bulbs needed
+                // Bulbs = Total Lumens / Lumens per Bulb
+                const lumensPerBulb = efficiency.lm_per_w * efficiency.w_per_unit;
+                
+                const numBulbsBrooding = Math.ceil(lumensBrooding / lumensPerBulb);
+                const numBulbsGrower = Math.ceil(lumensGrower / lumensPerBulb);
+                
+                // Ensure min of 1 bulb for very small areas
+                const finalNumBrooding = Math.max(1, numBulbsBrooding);
+                const finalNumGrower = Math.max(1, numBulbsGrower);
+
+                // 3. Calculate total Wattage
+                const totalWattageBrooding = finalNumBrooding * efficiency.w_per_unit;
+                const totalWattageGrower = finalNumGrower * efficiency.w_per_unit;
+                
+                // 4. Update DOM
+                document.getElementById('brooding-bulb-count').textContent = finalNumBrooding.toLocaleString();
+                document.getElementById('brooding-wattage').textContent = `Total Wattage: ${totalWattageBrooding.toLocaleString()} W`;
+                document.getElementById('grower-bulb-count').textContent = finalNumGrower.toLocaleString();
+                document.getElementById('grower-wattage').textContent = `Total Wattage: ${totalWattageGrower.toLocaleString()} W`;
+            }
+            
+            // --- FEED SPECS LOGIC ---
+            
+            function renderFeedFormulations() {
+                const container = document.getElementById('feed-formulation-display');
+                container.innerHTML = Object.keys(feedFormulations).map(key => {
+                    const data = feedFormulations[key];
+                    
+                    // Simple conversion from cost/kg to cost/50kg bag for context
+                    const costPerBagBDT = (data.costPerKg * 50).toFixed(2);
+                    
+                    return `
+                        <div class="bg-gray-50 p-5 rounded-xl border border-gray-200">
+                            <h4 class="text-xl font-bold text-green-700 mb-3">${data.label}</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="p-3 bg-white rounded border border-gray-100">
+                                    <p class="text-sm font-medium text-gray-500">Crude Protein</p>
+                                    <p class="text-lg font-semibold text-gray-800">${data.crudeProtein}</p>
+                                </div>
+                                <div class="p-3 bg-white rounded border border-gray-100">
+                                    <p class="text-sm font-medium text-gray-500">Metabolizable Energy</p>
+                                    <p class="text-lg font-semibold text-gray-800">${data.metabolizableEnergy}</p>
+                                </div>
+                                <div class="p-3 bg-white rounded border border-gray-100">
+                                    <p class="text-sm font-medium text-gray-500">Est. Cost</p>
+                                    <p class="text-lg font-semibold text-gray-800">৳ ${costPerBagBDT} / 50kg bag</p>
+                                    <p class="text-xs text-gray-400">(${data.costPerKg.toFixed(2)} BDT/kg)</p>
+                                </div>
+                                <div class="md:col-span-3 pt-2">
+                                    <p class="text-sm font-medium text-gray-700 mb-1">Key Ingredients:</p>
+                                    <p class="text-base text-gray-600">${(data.ingredients || []).join(', ')}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            // --- FEED MIXER LOGIC ---
+            
+            // Get ingredient data from DOM
+            function getIngredientData() {
+                const data = [];
+                document.querySelectorAll('.ingredient-row').forEach(row => {
+                    const id = row.dataset.id;
+                    // Find input fields by their specific ID to ensure we grab the current values
+                    const percentInput = document.getElementById(`percent-${id}`);
+                    const cpInput = document.getElementById(`cp-${id}`);
+                    const meInput = document.getElementById(`me-${id}`);
+                    const costInput = document.getElementById(`cost-${id}`);
+
+                    // Use current values from inputs
+                    const percent = parseFloat(percentInput.value) / 100 || 0;
+                    const cp = parseFloat(cpInput.value) || 0;
+                    const me = parseFloat(meInput.value) || 0;
+                    const cost = parseFloat(costInput.value) || 0;
+                    const name = row.querySelector('.ingredient-name').textContent;
+                    
+                    data.push({
+                        id: id,
+                        name: name,
+                        percent: percent, // as decimal (0 to 1)
+                        cp: cp,
+                        me: me,
+                        cost: cost
+                    });
+                });
+                return { data, isValid: true };
+            }
+
+            function setupFeedMixer() {
+                const container = document.getElementById('feed-mixer-inputs');
+                let html = '';
+                
+                feedIngredients.forEach((ing, index) => {
+                    const cleanName = ing.name.replace(/[^a-zA-Z0-9]/g, '');
+                    const isFlexible = ing.name.includes('Maize') || ing.name.includes('Soybean Meal');
+
+                    html += `
+                        <tr class="ingredient-row" data-id="${cleanName}">
+                            <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 ingredient-name">${ing.name}</td>
+                            <td class="px-3 py-1 whitespace-nowrap">
+                                <input type="number" id="cost-${cleanName}" data-key="cost" min="0" step="any" value="${ing.defaultCost.toFixed(2)}" class="input-cost w-full px-2 py-1 border rounded text-sm" oninput="calculateMix()">
+                            </td>
+                            <td class="px-3 py-1 whitespace-nowrap">
+                                <input type="number" id="cp-${cleanName}" data-key="cp" min="0" max="100" step="0.1" value="${ing.defaultCP.toFixed(2)}" class="input-cp w-full px-2 py-1 border rounded text-sm" oninput="calculateMix()">
+                            </td>
+                            <td class="px-3 py-1 whitespace-nowrap">
+                                <input type="number" id="me-${cleanName}" data-key="me" min="0" step="10" value="${ing.defaultME.toFixed(0)}" class="input-me w-full px-2 py-1 border rounded text-sm" oninput="calculateMix()">
+                            </td>
+                            <td class="px-3 py-1 whitespace-nowrap">
+                                <input type="number" id="percent-${cleanName}" data-key="percent" min="0" max="100" step="0.01" value="${ing.initialPercent.toFixed(2)}" 
+                                class="input-percent w-full px-2 py-1 border rounded text-sm font-semibold ${isFlexible ? 'text-indigo-700' : 'text-gray-700'}" 
+                                oninput="calculateMix()"
+                                >
+                            </td>
+                        </tr>
+                    `;
+                });
+                container.innerHTML = html;
+            }
+            
+            function loadTargetPhase() {
+                const select = document.getElementById('mix-phase-select');
+                const phaseKey = select.value;
+
+                if (phaseKey === 'custom') return;
+
+                const data = feedFormulations[phaseKey];
+                
+                document.getElementById('mix-target-cp').value = data.targetCP.toFixed(1);
+                document.getElementById('mix-target-me').value = data.targetME.toFixed(0);
+
+                calculateMix();
+            }
+
+            function loadSuggestedMix() {
+                const select = document.getElementById('mix-phase-select');
+                const phaseKey = select.value;
+
+                if (phaseKey === 'custom') {
+                    alert('Please select a production phase (Starter, Grower, or Finisher) first.');
+                    return;
+                }
+                
+                const mix = SUGGESTED_MIXES[phaseKey];
+                
+                // 1. Update targets (from SUGGESTED_MIXES structure)
+                document.getElementById('mix-target-cp').value = mix.targetCP.toFixed(1);
+                document.getElementById('mix-target-me').value = mix.targetME.toFixed(0);
+
+                // 2. Update ingredient percentages
+                document.querySelectorAll('.ingredient-row').forEach(row => {
+                    const id = row.dataset.id;
+                    const name = row.querySelector('.ingredient-name').textContent;
+                    
+                    // Convert "Maize (Corn)" -> "Maize(Corn)" for key lookup
+                    const mixKey = name.replace(/[^a-zA-Z0-9]/g, '');
+
+                    // Check if this ingredient has a defined percentage in the suggested mix
+                    if (mix.hasOwnProperty(mixKey)) {
+                        document.getElementById(`percent-${id}`).value = mix[mixKey].toFixed(2);
+                    } else {
+                        // For safety, zero out anything not explicitly defined, unless it's a known default that MUST stay (like water/premix)
+                        // However, based on the SUGGESTED_MIXES structure, every ingredient in feedIngredients is defined, so this block is mostly for future proofing.
+                        // document.getElementById(`percent-${id}`).value = 0.00.toFixed(2);
+                    }
+                });
+
+                // 3. Recalculate
+                calculateMix();
+            }
+            
+            function solveMix() {
+                // This function is kept as a placeholder but is intentionally disabled
+                alert('Automated LCF solver is now replaced by the "Load Suggested Mix" feature. Please use the suggested mixes and adjust manually.');
+            }
+
+
+            function calculateMix() {
+                const { data, isValid } = getIngredientData();
+
+                let totalPercent = 0;
+                let totalCP = 0;
+                let totalME = 0;
+                let totalCost = 0; // Total cost per kg
+                
+                const targetCP = parseFloat(document.getElementById('mix-target-cp').value) || 0;
+                const targetME = parseFloat(document.getElementById('mix-target-me').value) || 0;
+                
+                if (!isValid) return;
+
+                data.forEach(i => {
+                    // Accumulate totals
+                    totalPercent += i.percent * 100;
+                    totalCP += i.cp * i.percent;
+                    totalME += i.me * i.percent;
+                    totalCost += i.cost * i.percent;
+                });
+
+                const cpTolerance = 0.5;
+                const meTolerance = 50;
+
+                // --- 1. Percentage Check ---
+                const percentDisplay = document.getElementById('total-percent-display');
+                const percentAlertBox = document.getElementById('percent-alert');
+                
+                percentDisplay.textContent = `${totalPercent.toFixed(2)}%`;
+                document.getElementById('total-cost-display').textContent = `৳ ${totalCost.toFixed(2)}`;
+                
+                percentAlertBox.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'bg-yellow-100', 'text-yellow-800', 'bg-green-100', 'text-green-800');
+                
+                if (totalPercent > 99.99 && totalPercent < 100.01) {
+                    percentDisplay.classList.remove('text-red-600', 'text-yellow-600');
+                    percentDisplay.classList.add('text-green-600');
+                    percentAlertBox.textContent = 'Success! Batch total is 100%.';
+                    percentAlertBox.classList.add('bg-green-100', 'text-green-800');
+                    percentAlertBox.classList.remove('hidden');
+                } else if (totalPercent > 100) {
+                    percentDisplay.classList.remove('text-green-600', 'text-yellow-600');
+                    percentDisplay.classList.add('text-red-600');
+                    percentAlertBox.textContent = `OVER BY ${(totalPercent - 100).toFixed(2)}%! Please adjust percentages.`;
+                    percentAlertBox.classList.add('bg-red-100', 'text-red-800');
+                    percentAlertBox.classList.remove('hidden');
+                } else {
+                    percentDisplay.classList.remove('text-red-600', 'text-green-600');
+                    percentDisplay.classList.add('text-yellow-600');
+                    percentAlertBox.textContent = `UNDER BY ${(100 - totalPercent).toFixed(2)}%. Please add more ingredients.`;
+                    percentAlertBox.classList.add('bg-yellow-100', 'text-yellow-800');
+                    percentAlertBox.classList.remove('hidden');
+                }
+
+                // --- 2. Nutrient Check ---
+                
+                document.getElementById('achieved-cp').querySelector('p:last-child').textContent = `${totalCP.toFixed(2)}%`;
+                document.getElementById('achieved-me').querySelector('p:last-child').textContent = `${totalME.toFixed(0)} kcal/kg`;
+
+                const nutrientAlertBox = document.getElementById('nutrient-alert');
+                nutrientAlertBox.classList.add('hidden');
+                nutrientAlertBox.classList.remove('bg-red-100', 'text-red-800', 'bg-green-100', 'text-green-800');
+
+                let nutrientAlerts = [];
+                
+                // Check CP
+                if (Math.abs(totalCP - targetCP) > cpTolerance) {
+                    nutrientAlerts.push(`Crude Protein (${totalCP.toFixed(2)}%) is **${totalCP < targetCP ? 'low' : 'high'}** (Target: ${targetCP.toFixed(1)}%).`);
+                }
+                
+                // Check ME
+                if (Math.abs(totalME - targetME) > meTolerance) {
+                    nutrientAlerts.push(`Metabolizable Energy (${totalME.toFixed(0)} kcal/kg) is **${totalME < targetME ? 'low' : 'high'}** (Target: ${targetME.toFixed(0)} kcal/kg).`);
+                }
+
+                if (nutrientAlerts.length > 0) {
+                    nutrientAlertBox.innerHTML = `Nutrient Deviation: ${nutrientAlerts.join(' ')}`;
+                    nutrientAlertBox.classList.remove('hidden');
+                    nutrientAlertBox.classList.add('bg-red-100', 'text-red-800');
+                } else if (totalPercent > 99.99 && totalPercent < 100.01) {
+                    nutrientAlertBox.textContent = `Nutrient targets achieved! Cost is ৳ ${totalCost.toFixed(2)}/kg.`;
+                    nutrientAlertBox.classList.remove('hidden');
+                    nutrientAlertBox.classList.add('bg-green-100', 'text-green-800');
+                }
+            }
+
+
+            function toggleFinancialInputs(type) {
+                const prefix = 'b_';
+                const includeCosts = document.getElementById(`${prefix}includeCosts`).checked;
+                const financialInputs = document.getElementById(`${prefix}financialInputs`);
+                
+                // Define required fields for P&L calculation
+                const broilerRequiredFields = ['salePricePerKg', 'docCost', 'laborCostPerBird', 'utilityCostPerBird', 'costPerBagBDT'];
+                
+                const requiredFields = broilerRequiredFields;
+
+                if (includeCosts) {
+                    financialInputs.classList.remove('opacity-0', 'max-h-0');
+                    financialInputs.classList.add('opacity-100', 'max-h-96', 'mt-4'); 
+                    requiredFields.forEach(id => document.getElementById(`${prefix}${id}`).required = true);
+                } else {
+                    financialInputs.classList.remove('opacity-100', 'max-h-96', 'mt-4');
+                    financialInputs.classList.add('opacity-0', 'max-h-0');
+                    requiredFields.forEach(id => document.getElementById(`${prefix}${id}`).required = false);
+                }
+            }
+
+            /**
+             * Triggers the browser's print dialog, which allows the user to 'Save as PDF'.
+             */
+            function printReport() {
+                window.print();
+            }
+            
+            // --- PEF DASHBOARD LOGIC ---
+            // PEF is deleted
+            
+            // --- BROILER LOGIC ---
+
+            function generateBroilerSchedule() {
+                const prefix = 'b_';
+                // Collect inputs and validate... 
+                const numChicks = parseInt(document.getElementById(`${prefix}numChicks`).value);
+                const startDateStr = document.getElementById(`${prefix}startDate`).value;
+                const targetWeightKg = parseFloat(document.getElementById(`${prefix}targetWeightKg`).value);
+                const includeCosts = document.getElementById(`${prefix}includeCosts`).checked;
+                
+                // Financial inputs
+                const salePricePerKg = parseFloat(document.getElementById(`${prefix}salePricePerKg`).value);
+                const docCost = parseFloat(document.getElementById(`${prefix}docCost`).value);
+                const monthlySalary = parseFloat(document.getElementById(`${prefix}laborCostPerBird`).value) || 0; // New: Monthly Salary
+                const kwhPrice = parseFloat(document.getElementById(`${prefix}utilityCostPerBird`).value) || 0; // New: kWh Price
+                const costPerBagBDT = parseFloat(document.getElementById(`${prefix}costPerBagBDT`).value);
+                const mortalityRateInput = parseFloat(document.getElementById(`${prefix}mortalityRate`).value) || 5.0; // User input mortality
+
+                const startDate = new Date(startDateStr);
+                const isValid = validateInputs(prefix, startDate);
+
+                if (!isValid) return;
+
+                // Show loading state
+                toggleLoading(prefix, true, 'Generate Broiler Plan');
+                document.getElementById('initial-message')?.remove();
+                
+                // Save data to localStorage 
+                if (document.getElementById(`${prefix}saveToStorage`).checked) {
+                    localStorage.setItem('broilerPlannerData', JSON.stringify({
+                        numChicks, startDate: startDateStr, targetWeightKg, includeCosts, salePricePerKg, 
+                        docCost, laborCostPerBird: monthlySalary, utilityCostPerBird: kwhPrice, costPerBagBDT, mortalityRate: mortalityRateInput
+                    }));
+                }
+                
+                setTimeout(() => {
+                    // Core Production Calculations
+                    const totalFeedPerBird_fixed = BROILER_SCHEDULE_WEEKS[BROILER_SCHEDULE_WEEKS.length - 1].cumFeedPerBird_kg;
+                    const totalFeedFlock_kg = totalFeedPerBird_fixed * numChicks;
+                    const totalFeedFlock_tons = totalFeedPerBird_fixed * numChicks / 1000;
+                    const FCR = totalFeedPerBird_fixed / targetWeightKg; 
+                    const survivalRate = 1 - (mortalityRateInput / 100);
+                    const survivngBirds = numChicks * survivalRate;
+                    const slaughterAgeDays = 42; 
+
+                    // --- Dynamic Area Calculations (NEW) ---
+                    // 1. Final (Finisher) Area required based on max kg/m^2 (42 kg/m^2 - Cobb Guide)
+                    const totalFlockWeight = numChicks * targetWeightKg;
+                    const requiredFinalAreaM2 = totalFlockWeight / MAX_DENSITY_KG_PER_M2;
+                    
+                    // 2. Starter/Brooding Area required based on max birds/m^2 (50 birds/m^2 - Cobb Guide)
+                    const requiredBroodingAreaM2 = numChicks / BROODING_DENSITY_BIRDS_PER_M2;
+                    
+                    // --- P&L CALCULATIONS (Automated Labor/Utility) ---
+                    
+                    // Labor Cost Calculation (Assumption: 1 worker per 5000 birds)
+                    const workerCount = Math.ceil(numChicks / LABOR_RATE_CHICKS_PER_WORKER);
+                    const totalLaborCostFlock = workerCount * monthlySalary * (TOTAL_CYCLE_DAYS / AVG_DAYS_IN_MONTH);
+                    const laborCostPerBird = totalLaborCostFlock / numChicks; // BDT/bird
+
+                    // Utility Cost Calculation (Assumption: 1.0 kWh per bird per cycle)
+                    const assumedKwhPerBird = KWH_PER_BIRD_CYCLE;
+                    const utilityCostPerBird = assumedKwhPerBird * kwhPrice; // BDT/bird
+                    
+                    // Total Non-Feed Cost (Per Bird: Labor + Utility + Misc. Meds/Other are assumed included here)
+                    const nonFeedCostPerBird = laborCostPerBird + utilityCostPerBird; 
+
+                    let costPerKgBDT = costPerBagBDT / 50; 
+                    const totalFeedCostBDT = totalFeedFlock_kg * costPerKgBDT;
+                    const totalDOCCostBDT = numChicks * docCost;
+                    const totalNonFeedCostBDT = numChicks * nonFeedCostPerBird;
+                    const totalCostBDT = totalFeedCostBDT + totalDOCCostBDT + totalNonFeedCostBDT;
+                    const totalKgSold = survivngBirds * targetWeightKg;
+                    const totalRevenueBDT = totalKgSold * salePricePerKg;
+                    const netProfitLossBDT = totalRevenueBDT - totalCostBDT;
+                    const breakEvenPricePerKg = totalCostBDT / totalKgSold;
+                    const breakEvenFCR = (totalKgSold > 0) ? (totalFeedFlock_kg / totalKgSold) : 0;
+                    
+                    // Inventory Check (using Week 1 feed demand)
+                    const week1FeedDemand_kg = BROILER_SCHEDULE_WEEKS[0].cumFeedPerBird_kg * numChicks; 
+                    const inventoryStatusHTML = checkInventory(startDate, numChicks, week1FeedDemand_kg);
+                    
+                    // Seasonal Alert
+                    const seasonalAlertHTML = generateSeasonalAlertHTML();
+
+                    // Render main schedule
+                    let htmlContent = generateBroilerHTML(startDate, totalFeedFlock_tons, totalFeedFlock_kg, targetWeightKg, survivngBirds, mortalityRateInput, includeCosts, totalRevenueBDT, totalCostBDT, netProfitLossBDT, breakEvenPricePerKg, breakEvenFCR, numChicks, docCost, nonFeedCostPerBird, totalFeedPerBird_fixed, salePricePerKg, totalKgSold, inventoryStatusHTML, requiredBroodingAreaM2, requiredFinalAreaM2, totalFeedCostBDT, seasonalAlertHTML, slaughterAgeDays, FCR, laborCostPerBird, utilityCostPerBird);
+                    
+                    document.getElementById('results-container').innerHTML = htmlContent;
+                    
+                    // After rendering, initialize the PEF dashboard with calculated values
+                    // document.getElementById('pef-weight').value = targetWeightKg.toFixed(2);
+                    // document.getElementById('pef-survival').value = (survivalRate * 100).toFixed(1);
+                    // document.getElementById('pef-age').value = slaughterAgeDays;
+                    // document.getElementById('pef-fcr').value = FCR.toFixed(3);
+                    // renderPEFResult(PEF, getPEFRating(PEF), targetWeightKg, survivalRate * 100, slaughterAgeDays, FCR);
+
+                    toggleLoading(prefix, false, 'Generate Broiler Plan');
+                }, 800);
+            }
+            
+            // Utility function to add days to a Date object.
+            function addDays(date, days) {
+                const result = new Date(date);
+                result.setDate(result.getDate() + days);
+                return result;
+            }
+
+            // Utility function to format date nicely.
+            function formatDate(date) {
+                return date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            }
+
+            function generateBroilerHTML(startDate, totalFeedFlock_tons, totalFeedFlock_kg, targetWeightKg, survivngBirds, mortalityRate, includeCosts, totalRevenueBDT, totalCostBDT, netProfitLossBDT, breakEvenPricePerKg, breakEvenFCR, numChicks, docCost, nonFeedCostPerBird, totalFeedPerBird_fixed, salePricePerKg, totalKgSold, inventoryStatusHTML, requiredBroodingAreaM2, requiredFinalAreaM2, totalFeedCostBDT, seasonalAlertHTML, slaughterAgeDays, FCR, laborCostPerBird, utilityCostPerBird) {
+                let htmlContent = '';
+                let currentDay = 0;
+                const survivalRatePercentage = (survivngBirds / numChicks) * 100;
+                
+                // 1. PEF Dashboard (New Section)
+                // --- REMOVED PEF DASHBOARD HTML ---
+
+                // 2. Summary Card
+                const totalADG = (targetWeightKg / slaughterAgeDays) * 1000;
+                const avgUniformity = BROILER_SCHEDULE_WEEKS.map(w => w.targetUniformity_percent).reduce((a, b) => a + b, 0) / BROILER_SCHEDULE_WEEKS.length;
+
+                htmlContent += `<div class="bg-teal-100 p-6 rounded-xl mb-8 card-shadow border-2 border-teal-500 print:break-inside-avoid"><h2 class="text-2xl font-bold text-teal-800 mb-4 flex items-center"><svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V14a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd"></path></svg>Flock Production Summary (ROSS-Aligned)</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center">
+                    <div class="p-3 bg-white rounded-lg border border-teal-200"><p class="text-sm font-medium text-gray-500">Flock Size</p><p class="text-2xl font-extrabold text-teal-600">${numChicks.toLocaleString()} Birds</p></div>
+                    <div class="p-3 bg-white rounded-lg border border-teal-200"><p class="text-sm font-medium text-gray-500">Total Feed Estimate (42 Days)</p><p class="text-2xl font-extrabold text-teal-600">${totalFeedFlock_tons.toFixed(2)} Metric Tons</p><p class="text-xs text-gray-400">(${totalFeedFlock_kg.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg)</p></div>
+                    <div class="p-3 bg-white rounded-lg border border-teal-200"><p class="text-sm font-medium text-gray-500">Target Harvest Date / Weight</p><p class="text-2xl font-extrabold text-teal-600">${formatDate(addDays(startDate, 42))}</p><p class="text-xs text-gray-400">@ ${targetWeightKg.toFixed(2)} kg/bird avg. weight</p></div>
+                    <div class="p-3 bg-white rounded-lg border border-teal-200"><p class="text-sm font-medium text-gray-500">Target FCR / Survival</p><p class="text-2xl font-extrabold text-teal-600">${FCR.toFixed(3)} / ${(survivalRatePercentage).toFixed(1)}%</p><p class="text-xs text-gray-400">(${survivngBirds.toLocaleString(undefined, { maximumFractionDigits: 0 })} Birds)</p></div>
+                    </div>
+                    
+                    <h3 class="text-xl font-semibold text-teal-700 mt-6 mb-2 border-t pt-4">House Planning Requirements</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center">
+                        <div class="p-3 bg-white rounded-lg border border-teal-200">
+                            <p class="text-sm font-medium text-gray-500">Required Brooding Area (Day 0-7)</p>
+                            <p class="text-2xl font-extrabold text-teal-600">${requiredBroodingAreaM2.toFixed(1)} $\text{m}^2$</p>
+                            <p class="text-xs text-gray-400">(Max 50 birds/m²)</p>
+                        </div>
+                        <div class="p-3 bg-green-50 rounded-lg border border-green-200">
+                            <p class="text-sm font-medium text-green-700">Minimum Final House Area (Day 42)</p>
+                            <p class="text-2xl font-extrabold text-green-800">${requiredFinalAreaM2.toFixed(1)} $\text{m}^2$</p>
+                            <p class="text-xs text-gray-400">(Max 42 kg/m²)</p>
+                        </div>
+                        <div class="p-3 bg-white rounded-lg border border-teal-200 sm:col-span-2">
+                            <p class="text-sm font-medium text-gray-500">Lighting Note</p>
+                            <p class="text-base font-extrabold text-teal-600">See dedicated "Lighting Planner" tab for details.</p>
+                            <p class="text-xs text-gray-400">Includes bulb calculator and schedule.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-teal-300 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="sm:col-span-2">
+                            <h3 class="text-lg font-semibold text-teal-700 mb-2">Inventory Status</h3>
+                            <div class="space-y-2">
+                                ${inventoryStatusHTML}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${seasonalAlertHTML}
+                    
+                </div>`;
+                
+                // 3. P&L and Break-Even Card
+                if (includeCosts) {
+                    htmlContent += `<div class="bg-blue-100 p-6 rounded-xl mb-8 card-shadow border-2 border-blue-500 print:break-inside-avoid"><h2 class="text-2xl font-bold text-blue-800 mb-4 flex items-center"><svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10.828 2.219a.5.5 0 00-.656 0L4.35 6.94a.5.5 0 00.328.883h10.643a.5.5 0 00.328-.883l-5.822-4.721zM10 18a8 8 0 100-16 8 8 0 000 16zM7 11a1 1 0 100 2h6a1 1 0 100-2H7z"/></svg>Financial Analysis (BDT ৳)</h2><h3 class="text-xl font-semibold text-blue-700 mb-4 border-b pb-2">Profit & Loss Summary</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="p-4 bg-white rounded-lg border border-blue-200"><p class="text-sm font-medium text-gray-500">Total Estimated Revenue</p><p class="text-2xl font-extrabold text-blue-600">৳ ${totalRevenueBDT.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p><p class="text-xs text-gray-500">(${totalKgSold.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg @ ৳ ${salePricePerKg.toFixed(2)}/kg)</p></div><div class="p-4 bg-white rounded-lg border border-blue-200"><p class="text-sm font-medium text-gray-500">Total Estimated Cost</p><p class="text-2xl font-extrabold text-red-600">৳ ${totalCostBDT.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p><p class="text-xs text-gray-500">(${numChicks.toLocaleString()} birds)</p></div><div class="p-4 rounded-lg border ${netProfitLossBDT >= 0 ? 'bg-green-200 border-green-400' : 'bg-red-200 border-red-400'}"><p class="text-sm font-medium ${netProfitLossBDT >= 0 ? 'text-green-800' : 'text-red-800'}">Net Profit / Loss</p><p class="text-2xl font-extrabold ${netProfitLossBDT >= 0 ? 'text-green-800' : 'text-red-800'}">৳ ${netProfitLossBDT.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p><p class="text-xs text-gray-700">${netProfitLossBDT >= 0 ? 'Projected Profit' : 'Projected Loss'}</p></div></div><h3 class="text-xl font-semibold text-blue-700 mb-4 border-b pt-6 pb-2 mt-6">Break-Even Analysis (Minimum Requirements)</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div class="p-3 bg-white rounded border border-blue-200"><p class="text-sm font-medium text-gray-500">Break-Even Sale Price</p><p class="text-lg font-bold text-blue-700">৳ ${breakEvenPricePerKg.toFixed(2)} / kg</p><p class="text-xs text-gray-400">Needed to cover all costs.</p></div><div class="p-3 bg-white rounded border border-blue-200"><p class="text-sm font-medium text-gray-500">Break-Even Feed Conversion Ratio (FCR)</p><p class="text-lg font-bold text-blue-700">${breakEvenFCR.toFixed(3)}</p><p class="text-xs text-gray-400">Maximum FCR allowed to break even at current pricing.</p></div><div class="md:col-span-2 mt-4"><h4 class="text-md font-semibold text-blue-600 mb-2">Cost Breakdown per Bird (Total: ৳ ${(totalCostBDT / numChicks).toFixed(2)})</h4><ul class="text-sm text-gray-600 grid grid-cols-1 sm:grid-cols-4"><li><span class="font-bold text-red-600">Feed Cost:</span> ৳ ${(totalFeedCostBDT / numChicks).toFixed(2)}</li><li><span class="font-bold text-red-600">DOC Cost:</span> ৳ ${docCost.toFixed(2)}</li><li><span class="font-bold text-red-600">Labor Cost:</span> ৳ ${laborCostPerBird.toFixed(2)}</li><li><span class="font-bold text-red-600">Utility Cost:</span> ৳ ${utilityCostPerBird.toFixed(2)}</li></ul></div></div></div>`;
+                }
+
+                // 4. Print Button
+                htmlContent += `<div class="text-center mb-8" id="download-btn-wrapper"><button onclick="printReport()" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200 shadow-lg hover:shadow-xl flex items-center justify-center mx-auto"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"></path></svg>Print / Save as PDF Report</button></div>`;
+
+                // 5. Weekly Schedule
+                htmlContent += `<div class="p-6 bg-white rounded-xl mb-6 card-shadow print:break-inside-avoid"><h3 class="text-2xl font-bold text-gray-700 mb-4">Target Key Performance Indicators (KPIs)</h3><div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200"><p class="text-sm font-medium text-gray-500">Average Daily Gain (ADG)</p><p class="text-xl font-extrabold text-blue-600">${totalADG.toFixed(1)} g</p></div>
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200"><p class="text-sm font-medium text-gray-500">Flock Uniformity (Avg. Target)</p><p class="text-xl font-extrabold text-blue-600">${avgUniformity.toFixed(1)}%</p></div>
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200"><p class="text-sm font-medium text-gray-500">Mortality Rate (Target)</p><p class="text-xl font-extrabold text-blue-600">${mortalityRate}%</p></div>
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200"><p class="text-sm font-medium text-gray-500">Target FCR</p><p class="text-xl font-extrabold text-blue-600">${FCR.toFixed(3)}</p></div>
+                </div></div>`;
+
+
+                BROILER_SCHEDULE_WEEKS.forEach(weekData => {
+                    const weekStartDay = currentDay + 1;
+                    currentDay = weekData.daysOffset; 
+                    const weekStartDate = addDays(startDate, weekStartDay - 1);
+                    const weekEndDate = addDays(startDate, currentDay - 1);
+                    const feedConsumption_kg = (weekData.avgDailyFeedPerBird_g / 1000) * 7 * numChicks; 
+                    const cumFeedConsumption_kg = weekData.cumFeedPerBird_kg * numChicks;
+                    
+                    // Lighting Info for the weekly card
+                    const lightingInfo = ROSS_LIGHTING_SCHEDULE.find(item => item.week === weekData.week);
+
+                    htmlContent += `<div class="bg-white rounded-xl mb-6 overflow-hidden card-shadow print:break-inside-avoid"><div class="bg-green-500 p-4 text-white"><h3 class="text-xl font-bold flex items-center justify-between"><span>Week ${weekData.week}: Day ${weekData.days}</span><span class="text-sm font-normal bg-green-700 px-3 py-1 rounded-full">${formatDate(weekStartDate)} - ${formatDate(weekEndDate)}</span></h3></div><div class="p-5 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6"><div class="lg:col-span-2 grid grid-cols-1 xl:grid-cols-2 gap-6"><div><h4 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">Key Management & Vaccination</h4><div class="grid grid-cols-1 sm:grid-cols-2 gap-y-1 mb-4 text-sm"><div class="font-medium text-gray-600"><span class="font-bold text-blue-700">Target ADG:</span> ${weekData.targetADG_g.toFixed(1)} g</div><div class="font-medium text-gray-600"><span class="font-bold text-blue-700">Uniformity Goal:</span> ${weekData.targetUniformity_percent}%</div></div>${weekData.tasks.map(task => {const taskDate = addDays(startDate, task.day - 1);let icon = '';let color = '';if (task.type === 'Vaccination') {icon = `<svg class="w-5 h-5 mr-2 text-red-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M5.5 8a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm-.5-2a.5.5 0 1 0 0 1 .5.5 0 0 0 0-1zm.5 4a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zM17 1H3a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V3a2 2 0 00-2-2zM3 17V3h14v14H3zm4-12h7a.5.5 0 010 1H7a.5.5 0 010-1zm0 3h7a.5.5 0 010 1H7a.5.5 0 010-1zm0 3h7a.5.5 0 010 1H7a.5.5 0 010-1z"/></svg>`;color = 'text-red-700 bg-red-100 border-red-400';} else {icon = `<svg class="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-3.5-7.5a.5.5 0 011 0V13h.5a.5.5 0 010 1H7.5a.5.5 0 010-1H8v-2.5a.5.5 0 01-.5-.5zM12 9a1 1 0 100-2 1 1 0 000 2zm-1 4a1 1 0 102 0 1 1 0 00-2 0z" clip-rule="evenodd"></path></svg>`;color = 'text-green-700 bg-green-100 border-green-400';}return `<div class="flex items-start mb-3 p-3 rounded-lg border ${color} transition duration-150 hover:shadow-md"><div class="flex-shrink-0 pt-1">${icon}</div><div><p class="text-sm font-bold text-gray-800">Day ${task.day} (${formatDate(taskDate)}) - ${task.type}</p><p class="text-sm text-gray-600">${task.desc}</p></div></div>`;}).join('')}</div><div class="border-t pt-4 xl:border-t-0 xl:border-l xl:pl-6 xl:pt-0 border-gray-200"><h4 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">Lighting & Environment Targets</h4><div class="space-y-3 mb-6"><div class="p-3 bg-gray-50 rounded-lg border border-gray-200"><p class="text-xs font-medium text-gray-500">Dark Hours / Day</p><p class="text-base font-semibold text-yellow-700">${lightingInfo.darkHours} </p></div><div class="p-3 bg-gray-50 rounded-lg border border-gray-200"><p class="text-xs font-medium text-gray-500">Light Intensity</p><p class="text-base font-semibold text-yellow-700">${lightingInfo.lux}</p></div></div><h4 class="text-lg font-semibold text-gray-700 border-b pb-2 mt-6 mb-4">Recommended Medicine/Supplements</h4><div class="space-y-3 mb-6">${weekData.medicine.map(med => `<div class="flex items-start"><svg class="w-4 h-4 mt-1 mr-2 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h.01a1 1 0 100-2H10zm3 0a1 1 0 000 2h.01a1 1 0 100-2H13z" clip-rule="evenodd"></path></svg><p class="text-sm text-gray-600"><span class="font-medium text-blue-700">${med.type}:</span> ${med.desc}</p></div>`).join('')}</div><h4 class="text-lg font-semibold text-gray-700 border-b pb-2 mt-6 mb-4">Possible Disease Threats</h4><div class="space-y-2">${weekData.threats.map(threat => `<div class="flex items-start p-2 bg-yellow-50 rounded-md border border-yellow-200"><svg class="w-4 h-4 mt-1 mr-2 text-yellow-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8.257 3.341a1 1 0 00.742 0l4.086-1.554A1 1 0 0013.25 1h-6.5a1 1 0 00-.743 1.787l4.086 1.554zM2 9a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V9zm4 1a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg><p class="text-sm font-medium text-yellow-800">${threat}</p></div>`).join('')}</div><div class="mt-6 pt-4 border-t border-gray-200"><h4 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">Air & Litter Quality Targets</h4><ul class="text-sm text-gray-600 space-y-1"><li><span class="font-bold">Ammonia:</span> < 10 ppm</li><li><span class="font-bold">Carbon Dioxide:</span> < 3,000 ppm</li><li><span class="font-bold">Litter Moisture:</span> < 35% (Friable)</li></ul></div></div></div><div class="lg:col-span-1 border-t lg:border-t-0 lg:border-l pt-4 lg:pt-0 lg:pl-6 border-gray-200"><h4 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">Feed & Target Performance</h4><div class="space-y-4"><div class="p-3 bg-gray-50 rounded-lg border border-gray-200"><p class="text-xs font-medium text-gray-500">Recommended Feed Type</p><p class="text-base font-semibold text-green-600">${weekData.feedType}</p></div><div class="p-3 bg-gray-50 rounded-lg border border-gray-200"><p class="text-xs font-medium text-gray-500">Target Cumulative Feed per Bird</p><p class="text-base font-semibold text-gray-800">${weekData.cumFeedPerBird_kg.toFixed(2)} kg</p></div><div class="p-3 bg-gray-50 rounded-lg border border-gray-200"><p class="text-xs font-medium text-gray-500">Target Bird Weight (End of Week)</p><p class="text-base font-semibold text-gray-800">${weekData.targetWeight_kg.toFixed(3)} kg</p></div><div class="p-3 bg-green-50 rounded-lg border border-green-200"><p class="text-xs font-medium text-green-700">Flock Feed Requirement (This Week)</p><p class="text-xl font-bold text-green-800">${(feedConsumption_kg / 1000).toFixed(2)} Metric Tons</p><p class="text-xs text-gray-400">(${feedConsumption_kg.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg)</p></div><div class="p-3 bg-green-50 rounded-lg border border-green-200"><p class="text-xs font-medium text-green-700">Flock Cumulative Feed Requirement</p><p class="text-xl font-bold text-green-800">${(cumFeedConsumption_kg / 1000).toFixed(2)} Metric Tons</p><p class="text-xs text-gray-400">(${cumFeedConsumption_kg.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg)</p></div></div></div></div></div>`;
+                });
+                return htmlContent;
+            }
+
+            // --- UTILITY FUNCTIONS ---
+
+            function toggleLoading(prefix, isLoading, defaultText) {
+                const btn = document.getElementById(`${prefix}generateBtn`);
+                const btnText = document.getElementById(`${prefix}btnText`);
+                const btnSpinner = document.getElementById(`${prefix}btnSpinner`);
+                
+                btn.disabled = isLoading;
+                if (isLoading) {
+                    btnText.textContent = 'Generating...';
+                    btnSpinner.classList.remove('hidden');
+                } else {
+                    btnText.textContent = defaultText;
+                    btnSpinner.classList.add('hidden');
+                }
+            }
+
+            function validateInputs(prefix, startDate) {
+                let isValid = true;
+                
+                // Re-run visibility check and set requirements
+                toggleFinancialInputs('broiler');
+
+                // Generic check for common inputs
+                const numChicks = parseInt(document.getElementById(`${prefix}numChicks`).value);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); 
+
+                if (isNaN(numChicks) || numChicks <= 0) {
+                    document.getElementById(`${prefix}chicksError`).classList.remove('hidden');
+                    isValid = false;
+                } else {
+                    document.getElementById(`${prefix}chicksError`).classList.add('hidden');
+                }
+                
+                if (isNaN(startDate.getTime()) || startDate < today) {
+                    document.getElementById(`${prefix}dateError`).classList.remove('hidden');
+                    isValid = false;
+                } else {
+                    document.getElementById(`${prefix}dateError`).classList.add('hidden');
+                }
+
+                // Broiler specific validation
+                if (prefix === 'b_') {
+                    const targetWeightKg = parseFloat(document.getElementById(`b_targetWeightKg`).value);
+                    if (isNaN(targetWeightKg) || targetWeightKg <= 0.1) {
+                        document.getElementById(`b_weightError`).classList.remove('hidden');
+                        isValid = false;
+                    } else {
+                        document.getElementById(`b_weightError`).classList.add('hidden');
+                    }
+                }
+                
+                // Financial Validation (only if checked)
+                if (document.getElementById(`${prefix}includeCosts`).checked) {
+                    // Simplified checks for brevity, assuming fields marked 'required' in HTML are primary checks
+                    const financeFields = {
+                        'b_salePricePerKg': 'b_salePriceError', 'b_docCost': 'b_docCostError', 'b_laborCostPerBird': 'b_laborCostError', 
+                        'b_utilityCostPerBird': 'b_utilityCostError', 'b_costPerBagBDT': 'b_costPerBagError', 'b_mortalityRate': 'b_mortalityError',
+                    };
+
+                    for (const [inputId, errorId] of Object.entries(financeFields)) {
+                        if (inputId.startsWith(prefix)) {
+                            const inputElement = document.getElementById(inputId);
+                            const errorElement = document.getElementById(errorId);
+                            
+                            // Check for invalid input (NaN, null, or < 0 for costs, but allow nonFeedCostPerBird >= 0)
+                            const isInvalid = isNaN(parseFloat(inputElement.value)) || 
+                                (parseFloat(inputElement.value) < 0) || 
+                                (!inputId.includes('utilityCostPerBird') && !inputId.includes('laborCostPerBird') && parseFloat(inputElement.value) <= 0);
+
+                            if (inputElement && inputElement.required && isInvalid) {
+                                errorElement.classList.remove('hidden');
+                                isValid = false;
+                            } else if (inputElement) {
+                                errorElement.classList.add('hidden');
+                            }
+                        }
+                    }
+                }
+                return isValid;
+            }
+        })();
+    </script>
+
+</body>
+</html>
