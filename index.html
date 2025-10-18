@@ -14,7 +14,7 @@
         @import url('https://fonts.fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f7f7f7;
+            background-color: #f3f4f6; /* Lighter gray background */
         }
         /* Custom scrollbar for better look */
         #results-container::-webkit-scrollbar {
@@ -22,14 +22,14 @@
             height: 8px;
         }
         #results-container::-webkit-scrollbar-thumb {
-            background-color: #6ee7b7; /* Emerald-300 */
+            background-color: #34d399; /* Emerald-400 */
             border-radius: 4px;
         }
         #results-container::-webkit-scrollbar-track {
-            background-color: #f0fff4; /* Minty background */
+            background-color: #e2e8f0; /* Slate background */
         }
         .card-shadow {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
         .loading-spinner {
             display: inline-block;
@@ -64,39 +64,46 @@
         #app-notification-modal {
             z-index: 1000;
         }
+        /* FIX: Ensure all non-active tabs are hidden on initial load */
+        .tab-content {
+            display: none;
+        }
+        .active-tab {
+             display: block;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
     
     <!-- Custom Notification/Alert Modal (Replaces window.alert) -->
-    <div id="app-notification-modal" class="hidden fixed bottom-5 right-5 w-full max-w-sm bg-yellow-600 text-white p-4 rounded-lg shadow-2xl transition-opacity duration-300">
+    <div id="app-notification-modal" class="hidden fixed bottom-5 right-5 w-full max-w-sm bg-indigo-600 text-white p-4 rounded-lg shadow-2xl transition-opacity duration-300">
         <p id="notification-message" class="text-sm font-semibold"></p>
     </div>
 
     <div class="max-w-6xl mx-auto">
         <!-- Header -->
-        <header class="text-center py-6 bg-green-700 text-white rounded-t-xl card-shadow">
+        <header class="text-center py-6 bg-teal-600 text-white rounded-t-xl card-shadow">
             <h1 class="text-3xl font-extrabold tracking-tight md:text-4xl">Commercial Broiler Production Planner</h1>
-            <p class="mt-2 text-green-200 text-sm md:text-base">Input your flock details to generate a complete 6-week schedule and financial analysis.</p>
-            <p class="text-xs mt-1 text-green-300 font-medium">Developed by MD AKRAMUL HAUE, BCS (LIVESTOCK), DLS, BANGLADESH</p>
+            <p class="mt-2 text-teal-200 text-sm md:text-base">Input your flock details to generate a complete 6-week schedule and financial analysis.</p>
+            <p class="text-xs mt-1 text-teal-300 font-medium">Developed by MD AKRAMUL HAUE, BCS (LIVESTOCK), DLS, BANGLADESH</p>
         </header>
 
         <!-- Main Content Wrapper -->
         <div class="bg-white p-6 md:p-8 rounded-b-xl mb-8 card-shadow">
             
-            <!-- Tab Navigation (UPDATED: Renamed Feed Guide to Feed Mixer) -->
-            <div class="flex border-b border-gray-200 mb-6">
-                <button id="tab-broiler" onclick="showTab('broiler')" class="px-6 py-2 text-sm font-medium border-r border-gray-200 focus:outline-none transition-colors duration-150 text-white bg-green-600 rounded-tl-lg hover:bg-green-700">Production Plan</button>
-                <button id="tab-lighting" onclick="showTab('lighting')" class="px-6 py-2 text-sm font-medium text-gray-700 focus:outline-none transition-colors duration-150 hover:bg-gray-100">Lighting Planner</button>
-                <button id="tab-mixer" onclick="showTab('mixer')" class="px-6 py-2 text-sm font-medium text-gray-700 focus:outline-none transition-colors duration-150 hover:bg-gray-100">Feed Mixer</button>
-                <button id="tab-feed-specs" onclick="showTab('feed-specs')" class="px-6 py-2 text-sm font-medium text-gray-700 focus:outline-none transition-colors duration-150 hover:bg-gray-100">Feed Specs</button>
-                <button id="tab-broiler-weather" onclick="showTab('broiler-weather')" class="px-6 py-2 text-sm font-medium text-gray-700 focus:outline-none transition-colors duration-150 hover:bg-gray-100 rounded-tr-lg">Broiler Weather Tool</button>
+            <!-- Tab Navigation (CLEANER UI) -->
+            <div class="flex border-b border-gray-200 mb-6 sticky top-0 bg-white z-20">
+                <button id="tab-broiler" onclick="showTab('broiler')" class="px-5 py-3 text-sm font-semibold border-r border-gray-200 focus:outline-none transition-colors duration-150 text-white bg-green-600 rounded-tl-lg hover:bg-green-700">Production Plan</button>
+                <button id="tab-lighting" onclick="showTab('lighting')" class="px-5 py-3 text-sm font-medium text-gray-700 focus:outline-none transition-colors duration-150 hover:bg-gray-100">Lighting Planner</button>
+                <button id="tab-mixer" onclick="showTab('mixer')" class="px-5 py-3 text-sm font-medium text-gray-700 focus:outline-none transition-colors duration-150 hover:bg-gray-100">Feed Mixer</button>
+                <button id="tab-feed-specs" onclick="showTab('feed-specs')" class="px-5 py-3 text-sm font-medium text-gray-700 focus:outline-none transition-colors duration-150 hover:bg-gray-100">Feed Specs</button>
+                <button id="tab-broiler-weather" onclick="showTab('broiler-weather')" class="px-5 py-3 text-sm font-medium text-gray-700 focus:outline-none transition-colors duration-150 hover:bg-gray-100 rounded-tr-lg">Broiler Weather Tool</button>
             </div>
 
             <!-- Tab Content: Production Planner -->
-            <div id="broiler-tab-content" class="tab-content">
-                <form id="broilerPlannerForm" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-                    <h3 class="md:col-span-4 text-xl font-bold text-gray-700 border-b pb-2 mb-4">Broiler Flock Details</h3>
+            <div id="broiler-tab-content" class="tab-content active-tab">
+                <form id="broilerPlannerForm" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <h3 class="md:col-span-4 text-xl font-bold text-gray-700 border-b pb-2 mb-4">Broiler Flock Details (Required)</h3>
                     <!-- Flock Size Input -->
                     <div class="md:col-span-1">
                         <label for="b_numChicks" class="block text-sm font-medium text-gray-700 mb-2">Number of Chicks (Flock Size)</label>
@@ -108,7 +115,7 @@
                     <div class="md:col-span-1">
                         <label for="b_startDate" class="block text-sm font-medium text-gray-700 mb-2">Chicks Received Date (Start Date)</label>
                         <input type="date" id="b_startDate" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150">
-                        <p id="b_dateError" class="text-red-500 text-xs mt-1 hidden">Please select today's date or a future date.</p>
+                        <p id="b_dateError" class="text-red-500 text-xs mt-1 hidden">Please select a valid start date.</p>
                     </div>
                     
                     <!-- Target Weight Input -->
@@ -119,60 +126,60 @@
                     </div>
 
                     <!-- Calculate Button -->
-                    <button type="submit" id="b_generateBtn" class="w-full h-11 px-4 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-200 transform hover:scale-[1.01] shadow-md hover:shadow-lg flex items-center justify-center col-span-1 md:col-span-1">
-                        <span id="b_btnText">Generate Broiler Plan</span>
+                    <button type="submit" id="b_generateBtn" class="w-full h-11 px-4 py-3 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition duration-200 transform hover:scale-[1.01] shadow-lg flex items-center justify-center col-span-1 md:col-span-1">
+                        <span id="b_btnText">Generate Production Plan</span>
                         <div id="b_btnSpinner" class="loading-spinner ml-2 hidden"></div>
                     </button>
                 </form>
                 
                 <!-- Financial Inputs (Broiler) -->
-                <div class="mt-6 pt-4 border-t border-gray-200">
+                <div class="mt-8 pt-4 border-t border-gray-200">
                     <div class="flex items-center mb-4">
                         <input type="checkbox" id="b_includeCosts" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
-                        <label for="b_includeCosts" class="ml-2 block text-sm font-semibold text-gray-700">Include P&L and Break-Even Analysis</label>
+                        <label for="b_includeCosts" class="ml-2 block text-base font-bold text-gray-700">Include Financial Analysis (P&L and Break-Even)</label>
                     </div>
                     
-                    <div id="b_financialInputs" class="grid grid-cols-1 md:grid-cols-4 gap-6 transition-all duration-300 ease-in-out opacity-0 max-h-0 overflow-hidden">
+                    <div id="b_financialInputs" class="grid grid-cols-1 md:grid-cols-4 gap-6 transition-all duration-300 ease-in-out opacity-0 max-h-0 overflow-hidden p-4 bg-yellow-50 rounded-xl border border-yellow-200">
                         
                         <!-- Sale Price -->
                         <div>
                             <label for="b_salePricePerKg" class="block text-sm font-medium text-gray-700 mb-2">Sale Price / kg Live (BDT ৳)</label>
-                            <input type="number" id="b_salePricePerKg" min="1" step="any" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150" placeholder="e.g., 180">
+                            <input type="number" id="b_salePricePerKg" min="1" step="any" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 transition duration-150" placeholder="e.g., 180">
                             <p id="b_salePriceError" class="text-red-500 text-xs mt-1 hidden">Required for analysis.</p>
                         </div>
 
                         <!-- DOC Cost -->
                         <div>
                             <label for="b_docCost" class="block text-sm font-medium text-gray-700 mb-2">Cost of DOC / Bird (BDT ৳)</label>
-                            <input type="number" id="b_docCost" min="1" step="any" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150" placeholder="e.g., 50">
+                            <input type="number" id="b_docCost" min="1" step="any" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 transition duration-150" placeholder="e.g., 50">
                             <p id="b_docCostError" class="text-red-500 text-xs mt-1 hidden">Required for analysis.</p>
                         </div>
 
                         <!-- Monthly Salary (Replaces Labor Cost / Bird) -->
                         <div>
                             <label for="b_laborCostPerBird" class="block text-sm font-medium text-gray-700 mb-2">Monthly Worker Salary (BDT ৳)</label>
-                            <input type="number" id="b_laborCostPerBird" min="0" step="any" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150" placeholder="e.g., 15000">
+                            <input type="number" id="b_laborCostPerBird" min="0" step="any" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 transition duration-150" placeholder="e.g., 15000">
                             <p id="b_laborCostError" class="text-red-500 text-xs mt-1 hidden">Required for calculation.</p>
                         </div>
 
                         <!-- Electricity Price (Replaces Utility Cost / Bird) -->
                         <div>
                             <label for="b_utilityCostPerBird" class="block text-sm font-medium text-gray-700 mb-2">Electricity Price / kWh (BDT ৳)</label>
-                            <input type="number" id="b_utilityCostPerBird" min="0" step="any" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150" placeholder="e.g., 10">
+                            <input type="number" id="b_utilityCostPerBird" min="0" step="any" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 transition duration-150" placeholder="e.g., 10">
                             <p id="b_utilityCostError" class="text-red-500 text-xs mt-1 hidden">Required for calculation.</p>
                         </div>
 
                         <!-- Bag Price Input -->
                         <div>
                             <label for="b_costPerBagBDT" class="block text-sm font-medium text-gray-700 mb-2">Price Per 50kg Feed Bag (BDT ৳)</label>
-                            <input type="number" id="b_costPerBagBDT" min="1" step="any" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150" placeholder="e.g., 3500">
+                            <input type="number" id="b_costPerBagBDT" min="1" step="any" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 transition duration-150" placeholder="e.g., 3500">
                             <p id="b_costPerBagError" class="text-red-500 text-xs mt-1 hidden">Required for analysis.</p>
                         </div>
 
                         <!-- Mortality Input (Optional but good for P&L) -->
                         <div>
                             <label for="b_mortalityRate" class="block text-sm font-medium text-gray-700 mb-2">Target Mortality Rate (%)</label>
-                            <input type="number" id="b_mortalityRate" min="0" max="100" step="0.1" value="5.0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150" placeholder="e.g., 5.0">
+                            <input type="number" id="b_mortalityRate" min="0" max="100" step="0.1" value="5.0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 transition duration-150" placeholder="e.g., 5.0">
                             <p id="b_mortalityError" class="text-red-500 text-xs mt-1 hidden">Please enter a valid rate.</p>
                         </div>
                         
@@ -191,37 +198,37 @@
                 </div>
             </div>
 
-            <!-- Tab Content: Feed Mixer (NEW IMPLEMENTATION - Replaced old feed-guide content) -->
-            <div id="mixer-tab-content" class="tab-content hidden">
-                <h3 class="text-xl font-bold text-gray-700 border-b pb-2 mb-4">Dynamic Broiler Feed Formulation Calculator</h3>
+            <!-- Tab Content: Feed Mixer (IMPROVED UI) -->
+            <div id="mixer-tab-content" class="tab-content">
+                <h3 class="text-2xl font-bold text-indigo-700 border-b pb-2 mb-6">Dynamic Broiler Feed Formulation Calculator</h3>
                 <p class="text-gray-600 mb-6">Enter local costs and adjust ingredient percentages to meet your flock's nutritional targets while optimizing cost.</p>
 
                 <!-- 1. Target Inputs and Load Button -->
-                <div class="p-6 bg-indigo-50 rounded-xl mb-6 grid grid-cols-1 md:grid-cols-4 gap-6 card-shadow">
-                    
+                <div class="p-6 bg-indigo-50 rounded-xl mb-8 grid grid-cols-1 md:grid-cols-4 gap-6 card-shadow">
+                    <h4 class="md:col-span-4 text-xl font-bold text-indigo-700 mb-2">Nutrient Targets</h4>
                     <div class="md:col-span-1">
-                        <label for="m_targetCP" class="block text-sm font-medium text-gray-700 mb-1">Target CP (%)</label>
-                        <input type="number" id="m_targetCP" min="10" max="30" step="0.1" value="22.0" class="w-full px-3 py-2 border border-indigo-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        <label for="m_targetCP" class="block text-sm font-medium text-gray-700 mb-1">Target Crude Protein (%)</label>
+                        <input type="number" id="m_targetCP" min="10" max="30" step="0.1" value="22.0" class="w-full px-3 py-2 border border-indigo-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 font-bold text-indigo-800">
                     </div>
 
                     <div class="md:col-span-1">
                         <label for="m_targetME" class="block text-sm font-medium text-gray-700 mb-1">Target ME (kcal/kg)</label>
-                        <input type="number" id="m_targetME" min="2000" max="3500" step="50" value="3000" class="w-full px-3 py-2 border border-indigo-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        <input type="number" id="m_targetME" min="2000" max="3500" step="50" value="3000" class="w-full px-3 py-2 border border-indigo-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 font-bold text-indigo-800">
                     </div>
                     
                     <div class="md:col-span-1">
-                        <label for="m_targetCa" class="block text-sm font-medium text-gray-700 mb-1">Target Ca (%)</label>
-                        <input type="number" id="m_targetCa" min="0.5" max="5.0" step="0.05" value="1.00" class="w-full px-3 py-2 border border-indigo-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        <label for="m_targetCa" class="block text-sm font-medium text-gray-700 mb-1">Target Calcium (%)</label>
+                        <input type="number" id="m_targetCa" min="0.5" max="5.0" step="0.05" value="1.00" class="w-full px-3 py-2 border border-indigo-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 font-bold text-indigo-800">
                     </div>
 
                     <div class="md:col-span-1">
                         <label for="m_targetAvailP" class="block text-sm font-medium text-gray-700 mb-1">Target Avail. P (%)</label>
-                        <input type="number" id="m_targetAvailP" min="0.2" max="1.0" step="0.01" value="0.45" class="w-full px-3 py-2 border border-indigo-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        <input type="number" id="m_targetAvailP" min="0.2" max="1.0" step="0.01" value="0.45" class="w-full px-3 py-2 border border-indigo-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 font-bold text-indigo-800">
                     </div>
                     
                     <div class="md:col-span-2">
                          <label for="m_phaseSelect" class="block text-sm font-medium text-gray-700 mb-1">Phase Quick-Select</label>
-                         <select id="m_phaseSelect" class="w-full px-3 py-2 border border-indigo-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="loadSuggestedMix(this.value)">
+                         <select id="m_phaseSelect" class="w-full px-3 py-2 border border-indigo-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 font-medium" onchange="loadSuggestedMix(this.value)">
                             <option value="CUSTOM">Custom</option>
                             <option value="STARTER">Starter (Day 0-14)</option>
                             <option value="GROWER">Grower (Day 15-35)</option>
@@ -230,7 +237,7 @@
                     </div>
                     
                     <div class="md:col-span-2">
-                        <button type="button" onclick="calculateMixAnalysis()" class="w-full h-11 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition duration-200 shadow-lg flex items-center justify-center mt-auto">
+                        <button type="button" onclick="calculateMixAnalysis()" class="w-full h-11 px-4 py-2 bg-pink-600 text-white font-semibold rounded-lg hover:bg-pink-700 transition duration-200 shadow-lg flex items-center justify-center mt-auto">
                             <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.707 5.293a1 1 0 00-1.414-1.414L12 8.586l-4.293-4.293a1 1 0 00-1.414 1.414L10.586 10l-4.293 4.293a1 1 0 001.414 1.414L12 11.414l4.293 4.293a1 1 0 001.414-1.414L13.414 10l4.293-4.293z" fill-rule="evenodd" clip-rule="evenodd"></path><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-5-8a5 5 0 1110 0 5 5 0 01-10 0z" clip-rule="evenodd"></path></svg>
                             Analyze & Get Recommendations
                         </button>
@@ -246,46 +253,49 @@
                 <div id="mix-analysis-container" class="mt-8 pt-6 border-t border-gray-200">
                     <h4 class="text-xl font-bold text-gray-700 mb-4">Calculated Mix Analysis</h4>
                     
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
-                        <!-- Achieved Nutrients -->
-                        <div class="p-4 bg-white rounded-xl border border-blue-300">
-                            <p class="text-sm font-medium text-gray-500">Achieved Crude Protein</p>
-                            <p id="m_achievedCP" class="text-2xl font-extrabold text-blue-600">--</p>
-                            <p class="text-xs text-gray-500 mt-1">Target: <span id="m_dispTargetCP">--</span></p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+                        <!-- Achieved Nutrients - Use a better card design -->
+                        <div class="p-4 bg-white rounded-xl border-l-4 border-blue-600 card-shadow lg:col-span-1">
+                            <p class="text-xs font-medium text-gray-500">Achieved CP</p>
+                            <p id="m_achievedCP" class="text-xl font-extrabold text-blue-800">--</p>
+                            <p class="text-xs text-gray-400 mt-1">Tgt: <span id="m_dispTargetCP">--</span></p>
                         </div>
-                        <div class="p-4 bg-white rounded-xl border border-blue-300">
-                            <p class="text-sm font-medium text-gray-500">Achieved ME</p>
-                            <p id="m_achievedME" class="text-2xl font-extrabold text-blue-600">--</p>
-                            <p class="text-xs text-gray-500 mt-1">Target: <span id="m_dispTargetME">--</span></p>
+                        <div class="p-4 bg-white rounded-xl border-l-4 border-blue-600 card-shadow lg:col-span-1">
+                            <p class="text-xs font-medium text-gray-500">Achieved ME</p>
+                            <p id="m_achievedME" class="text-xl font-extrabold text-blue-800">--</p>
+                            <p class="text-xs text-gray-400 mt-1">Tgt: <span id="m_dispTargetME">--</span></p>
                         </div>
-                        <div class="p-4 bg-white rounded-xl border border-blue-300">
-                            <p class="text-sm font-medium text-gray-500">Achieved Calcium</p>
-                            <p id="m_achievedCa" class="text-2xl font-extrabold text-blue-600">--</p>
-                            <p class="text-xs text-gray-500 mt-1">Target: <span id="m_dispTargetCa">--</span></p>
+                         <div class="p-4 bg-white rounded-xl border-l-4 border-blue-600 card-shadow lg:col-span-1">
+                            <p class="text-xs font-medium text-gray-500">Achieved Ca</p>
+                            <p id="m_achievedCa" class="text-xl font-extrabold text-blue-800">--</p>
+                            <p class="text-xs text-gray-400 mt-1">Tgt: <span id="m_dispTargetCa">--</span></p>
                         </div>
-                        <div class="p-4 bg-white rounded-xl border border-blue-300">
-                            <p class="text-sm font-medium text-gray-500">Achieved Avail. P</p>
-                            <p id="m_achievedAvailP" class="text-2xl font-extrabold text-blue-600">--</p>
-                            <p class="text-xs text-gray-500 mt-1">Target: <span id="m_dispTargetAvailP">--</span></p>
+                         <div class="p-4 bg-white rounded-xl border-l-4 border-blue-600 card-shadow lg:col-span-1">
+                            <p class="text-xs font-medium text-gray-500">Achieved Avail. P</p>
+                            <p id="m_achievedAvailP" class="text-xl font-extrabold text-blue-800">--</p>
+                            <p class="text-xs text-gray-400 mt-1">Tgt: <span id="m_dispTargetAvailP">--</span></p>
                         </div>
 
                         <!-- Summary Metrics -->
-                        <div class="p-4 bg-white rounded-xl border border-green-300">
-                            <p class="text-sm font-medium text-gray-500">Total Mix Percentage</p>
-                            <p id="m_totalMixPct" class="text-2xl font-extrabold text-green-600">0.00%</p>
-                            <p id="m_totalMixStatus" class="text-xs text-gray-500 mt-1">Input percentages should total 100%.</p>
+                        <div class="p-4 bg-white rounded-xl border-l-4 border-teal-600 card-shadow lg:col-span-1">
+                            <p class="text-xs font-medium text-gray-500">Total Mix %</p>
+                            <p id="m_totalMixPct" class="text-xl font-extrabold text-teal-800">0.00%</p>
+                            <p id="m_totalMixStatus" class="text-xs text-gray-400 mt-1">Batch Total (100%)</p>
                         </div>
-                        <div class="p-4 bg-white rounded-xl border border-green-300">
-                            <p class="text-sm font-medium text-gray-500">Estimated Cost / kg</p>
-                            <p id="m_estimatedCost" class="text-2xl font-extrabold text-green-600">৳ 0.00</p>
-                            <p class="text-xs text-gray-500 mt-1">Based on local ingredient costs.</p>
+                        <div class="p-4 bg-white rounded-xl border-l-4 border-teal-600 card-shadow lg:col-span-1">
+                            <p class="text-xs font-medium text-gray-500">Estimated Cost / kg</p>
+                            <p id="m_estimatedCost" class="text-xl font-extrabold text-teal-800">৳ 0.00</p>
+                            <p class="text-xs text-gray-400 mt-1">Local BDT Cost</p>
                         </div>
                     </div>
                     
                     <!-- Adjustment Recommendations -->
-                    <div id="m_recommendations" class="p-4 bg-yellow-50 rounded-xl border border-yellow-300 mt-4">
-                        <h5 class="font-bold text-lg text-yellow-800 mb-2">Adjustment Recommendations</h5>
-                        <div id="m_recommendationList" class="space-y-2">
+                    <div id="m_recommendations" class="p-6 bg-yellow-50 rounded-xl border border-yellow-300 mt-4 card-shadow">
+                        <h5 class="font-bold text-lg text-yellow-800 mb-2 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-yellow-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                            Adjustment Recommendations
+                        </h5>
+                        <div id="m_recommendationList" class="space-y-3">
                             <p class="text-sm text-gray-700">Click **Analyze & Get Recommendations** after setting your targets and mix percentages.</p>
                         </div>
                     </div>
@@ -293,19 +303,19 @@
                 </div>
             </div>
             
-            <!-- Tab Content: Lighting Planner (NEW TAB) -->
-            <div id="lighting-tab-content" class="tab-content hidden">
-                <h3 class="text-xl font-bold text-gray-700 border-b pb-2 mb-4">ROSS Lighting Program Schedule (Recommended)</h3>
+            <!-- Tab Content: Lighting Planner -->
+            <div id="lighting-tab-content" class="tab-content">
+                <h3 class="text-2xl font-bold text-gray-700 border-b pb-2 mb-6">ROSS Lighting Program Schedule (Recommended)</h3>
 
                 <!-- Lighting Schedule Table -->
-                <div class="overflow-x-auto rounded-xl border border-gray-200 mb-8">
+                <div class="overflow-x-auto rounded-xl border border-gray-200 mb-8 card-shadow">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Week (Days)</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Dark Hours</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Light Intensity (Min. Lux)</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Management Goal</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Week (Days)</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Total Dark Hours</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Light Intensity (Min. Lux)</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Management Goal</th>
                             </tr>
                         </thead>
                         <tbody id="lighting-schedule-body" class="bg-white divide-y divide-gray-200">
@@ -314,12 +324,11 @@
                     </table>
                 </div>
 
-                <h3 class="text-xl font-bold text-gray-700 border-b pb-2 mb-4 mt-8">Bulb Requirement Calculator (for Uniformity)</h3>
+                <h3 class="text-2xl font-bold text-gray-700 border-b pb-2 mb-4 mt-8">Bulb Requirement Calculator (for Uniformity)</h3>
                 
-                <form id="lightingCalculatorForm" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-                    <div class="md:col-span-4 text-sm text-gray-600">
-                        Enter your actual house size to calculate the number of bulbs needed to achieve the minimum recommended **Lux** level for each phase.
-                        (Note: Lux is Lumens/m², Lumens are Lumens/Watt. Assumes uniform placement.)
+                <form id="lightingCalculatorForm" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end p-4 bg-blue-50 rounded-xl border border-blue-200">
+                    <div class="md:col-span-4 text-sm text-blue-800">
+                        Enter your actual house size to calculate the number of bulbs needed to achieve the minimum recommended **Lux** level for each phase. (Assumes a typical LED bulb efficiency.)
                     </div>
 
                     <!-- House Length -->
@@ -347,34 +356,35 @@
 
                 <div id="light-results" class="mt-6 pt-4 border-t border-gray-200">
                     <!-- Results dynamically inserted here -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Brooding Phase (30 Lux) -->
-                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-300">
+                        <div class="p-5 bg-white rounded-lg border-l-4 border-blue-600 card-shadow">
                             <p class="text-sm font-medium text-blue-700">Brooding Phase (Day 0-7) @ 30 Lux</p>
-                            <p id="brooding-bulb-count" class="text-3xl font-extrabold text-blue-600 mt-1">0</p>
+                            <p id="brooding-bulb-count" class="text-3xl font-extrabold text-blue-800 mt-1">0</p>
                             <p id="brooding-wattage" class="text-sm text-gray-600">Total Wattage: 0 W</p>
-                            <p class="text-xs text-gray-500 mt-2">Required for feed/water intake and early growth.</p>
+                            <p class="text-xs text-gray-500 mt-2">Maximum intensity for starting feed intake and activity.</p>
                         </div>
                         <!-- Grower Phase (5 Lux) -->
-                        <div class="p-4 bg-green-50 rounded-lg border border-green-300">
-                            <p id="grower-phase-title" class="text-sm font-medium text-green-700">Grower/Finisher Phase (Day 8+) @ 5 Lux</p>
-                            <p id="grower-bulb-count" class="text-3xl font-extrabold text-green-600 mt-1">0</p>
+                        <div class="p-5 bg-white rounded-lg border-l-4 border-teal-600 card-shadow">
+                            <p id="grower-phase-title" class="text-sm font-medium text-teal-700">Grower/Finisher Phase (Day 8+) @ 5 Lux</p>
+                            <p id="grower-bulb-count" class="text-3xl font-extrabold text-teal-800 mt-1">0</p>
                             <p id="grower-wattage" class="text-sm text-gray-600">Total Wattage: 0 W</p>
-                            <p class="text-xs text-gray-500 mt-2">Required for FCR and welfare standards.</p>
+                            <p class="text-xs text-gray-500 mt-2">Minimum intensity for better FCR and reduced stress.</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Tab Content: Feed Formulation Specs -->
-            <div id="feed-specs-tab-content" class="tab-content hidden">
-                <h3 class="text-xl font-bold text-gray-700 border-b pb-2 mb-4">Commercial Feed Specification Targets</h3>
+            <div id="feed-specs-tab-content" class="tab-content">
+                <h3 class="text-2xl font-bold text-gray-700 border-b pb-2 mb-4">Commercial Feed Specification Targets</h3>
+                <p class="text-gray-600 mb-6">These are typical nutritional requirements for commercial broilers (e.g., Cobb 500) at different growth phases.</p>
                 <div id="feed-formulation-display" class="space-y-6">
                     <!-- Dynamic feed cards inserted here -->
                 </div>
             </div>
 
-            <!-- Tab Content: Feed Mixer Calculator (DELETED) -->
+            <!-- Tab Content: Feed Mixer Calculator (DELETED) - Keep as dummy for stability -->
             <div id="feed-mixer-tab-content" class="tab-content hidden">
                  <h3 class="text-xl font-bold text-gray-700 border-b pb-2 mb-4">Dynamic Feed Formulation Calculator (Nutrient Contribution Analysis)</h3>
                  <div class="text-center p-8 bg-gray-50 rounded-xl text-red-500 border border-red-300">
@@ -390,11 +400,11 @@
                  <p class="text-gray-500">This tab was removed as per user request to maintain application stability.</p>
             </div>
 
-            <!-- Tab Content: Broiler Weather Tool (EXISTING) -->
-            <div id="broiler-weather-tab-content" class="tab-content hidden">
-                <h3 class="text-xl font-bold text-gray-700 border-b pb-2 mb-4">Broiler Environment Stress Analyzer (Manual Input)</h3>
+            <!-- Tab Content: Broiler Weather Tool (IMPROVED UI) -->
+            <div id="broiler-weather-tab-content" class="tab-content">
+                <h3 class="text-2xl font-bold text-indigo-700 border-b pb-2 mb-6">Broiler Environment Stress Analyzer (Manual Input)</h3>
                 
-                <form id="layerWeatherForm" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                <form id="layerWeatherForm" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end p-4 bg-indigo-50 rounded-xl border border-indigo-200">
                     <div class="md:col-span-1">
                         <label for="l_temp" class="block text-sm font-medium text-gray-700 mb-2">Ambient Temperature (°C)</label>
                         <input type="number" id="l_temp" min="0" max="50" step="0.1" required value="25.0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500" placeholder="e.g., 30.5">
@@ -406,7 +416,7 @@
                     </div>
 
                     <div class="md:col-span-2 flex items-end">
-                        <button type="button" onclick="checkBroilerEnvironment()" class="w-full px-4 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition duration-200 shadow-md transform hover:scale-[1.01]">
+                        <button type="button" onclick="checkBroilerEnvironment()" class="w-full px-4 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition duration-200 shadow-lg transform hover:scale-[1.01]">
                             Analyze Environment & Get Recommendations
                         </button>
                     </div>
@@ -414,7 +424,7 @@
 
                 <div id="layer-results-container" class="mt-8">
                     <!-- Results will be dynamically inserted here -->
-                    <div class="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div class="p-6 bg-gray-100 rounded-xl border border-gray-300">
                         <p class="text-gray-500">Enter current temperature and humidity above to determine the stress level and necessary management adjustments for your broiler flock.</p>
                     </div>
                 </div>
@@ -424,8 +434,8 @@
         <!-- Results Container -->
         <div id="results-container" class="mt-8">
             <!-- Results will be dynamically inserted here -->
-            <div id="initial-message" class="text-center p-12 bg-white rounded-xl text-gray-500">
-                <svg class="w-12 h-12 mx-auto mb-3 text-green-500" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+            <div id="initial-message" class="text-center p-12 bg-white rounded-xl card-shadow text-gray-500">
+                <svg class="w-12 h-12 mx-auto mb-3 text-teal-500" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                 <p class="text-lg font-medium">Enter the flock size and start date above to view your personalized 6-week broiler production schedule and financial forecast.</p>
             </div>
         </div>
@@ -500,7 +510,7 @@
             },
             { week: 5, days: '29 - 35', daysOffset: 34, avgDailyFeedPerBird_g: 110, cumFeedPerBird_kg: 2.320, targetWeight_kg: 1.700, targetADG_g: 85.7, targetUniformity_percent: 75, feedType: 'Finisher Pellet (Cobb Diet Type 3 - Cost Optimization)', lighting: { darkHours: 'Min. 4-6', lux: '5-10 Lux' }, medicine: [ { type: 'Health', desc: 'If Ascites is a risk, consider **Sodium-bi-carbonate @ 2-5g/L** (Square/Renata Bicarbonate) or **Furosemide @ 40mg/L** (Vet Prescription).' }, { type: 'Management', desc: 'Ensure Toxin Binder/Adsorbent is used if Mycotoxicosis is a risk. **Ex: Advent Toxi-Guard/Technodrug Mycofix**.' } ], threats: ['Ammonia burn (eye and footpad lesions)', 'Lame/Locomotor issues', 'Sudden Death Syndrome (SDS)'], tasks: [ { day: 29, type: 'Management', desc: 'Maintain temperature around 22°C (72°F). Increase cooling and air movement. Prepare for feed withdrawal logistics.' }, { day: 35, type: 'Management', desc: 'Transition to Finisher feed. Weigh sample birds to track growth performance.' } ],
             },
-            { week: 6, days: '36 - 42', daysOffset: 41, avgDailyFeedPerBird_g: 130, cumFeedPerBird_kg: 3.160, targetWeight_kg: 2.200, targetADG_g: 71.4, targetUniformity_percent: 70, feedType: 'Finisher Pellet (Withdrawal)', lighting: { darkHours: '1 hour dark', lux: '15 Lux' }, medicine: [ { type: 'Crucial Task', desc: '**Ensure NO medication** is administered that requires a withdrawal period past Day 39. Only clean water.' }, { type: 'Support', desc: 'Use **Vitamin K** if any previous disease (like Coccidiosis) caused bleeding risk. **Ex: Square K-Max/ACI K-3** (Dosage: 1-2ml/L).' } ], threats: ['Pre-slaughter stress', 'High ambient temperature mortality', 'Condemnation risk due to withdrawal failure'], tasks: [ { day: 39, type: 'Management', desc: 'Withdrawal Period starts: Stop all antibiotic or medicated feed (usually 3-5 days before slaughter). Only use clean water.' }, { day: 42, type: 'Management', desc: 'Target Market Age/Slaughter. **Optimum Feed Withdrawal: 8-12 hours**.' } ],
+            { week: 6, days: '36 - 42', daysOffset: 41, avgDailyFeedPerBird_g: 130, cumFeedPerBird_kg: 3.160, targetWeight_kg: 2.200, targetADG_g: 71.4, targetUniformity_percent: 70, feedType: 'Finisher Pellet (Withdrawal)', lighting: { darkHours: '1 hour dark', lux: '15 Lux' }, medicine: [ { type: 'Crucial Task', desc: '**Ensure NO medication** is administered that requires a withdrawal period past Day 39. Only clean water.' }, { type: 'Support', desc: 'Use **Vitamin K** if any previous disease (like Coccidiosis) caused bleeding risk. **Ex: Square K-Max/ACI K-3** (Dosage: 1-2ml/L).' }, { type: 'Management', desc: 'Target Market Age/Slaughter. **Optimum Feed Withdrawal: 8-12 hours**.' } ], threats: ['Pre-slaughter stress', 'High ambient temperature mortality', 'Condemnation risk due to withdrawal failure'], tasks: [ { day: 39, type: 'Management', desc: 'Withdrawal Period starts: Stop all antibiotic or medicated feed (usually 3-5 days before slaughter). Only use clean water.' }, { day: 42, type: 'Management', desc: 'Final Weighing and Shipment.' } ],
             }
         ];
 
@@ -739,14 +749,14 @@
             html += '<table class="min-w-full divide-y divide-gray-200">';
             
             // Table Header
-            html += '<thead class="bg-gray-50 sticky top-0 z-10"><tr>';
-            html += '<th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ingredient</th>';
-            html += '<th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Local Cost (৳/kg)</th>';
-            html += '<th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CP (%)</th>';
-            html += '<th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ME (kcal/kg)</th>';
-            html += '<th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ca (%)</th>';
-            html += '<th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avail. P (%)</th>';
-            html += '<th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[100px]">Mix %</th>';
+            html += '<thead class="bg-indigo-100 sticky top-0 z-10"><tr>';
+            html += '<th class="px-3 py-3 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">Ingredient</th>';
+            html += '<th class="px-3 py-3 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">Local Cost (৳/kg)</th>';
+            html += '<th class="px-3 py-3 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">CP (%)</th>';
+            html += '<th class="px-3 py-3 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">ME (kcal/kg)</th>';
+            html += '<th class="px-3 py-3 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">Ca (%)</th>';
+            html += '<th class="px-3 py-3 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">Avail. P (%)</th>';
+            html += '<th class="px-3 py-3 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider w-[100px]">Mix %</th>';
             html += '</tr></thead>';
             
             // Table Body
@@ -759,32 +769,32 @@
                             
                             <!-- Local Cost Input -->
                             <td class="px-3 py-2">
-                                <input type="number" id="m_cost_${item.id}" value="${item.localCost.toFixed(2)}" min="0" step="0.01" class="w-full text-xs p-1 border rounded focus:ring-blue-500" ${isCalculable ? '' : 'disabled'}>
+                                <input type="number" id="m_cost_${item.id}" value="${item.localCost.toFixed(2)}" min="0" step="0.01" class="w-full text-xs p-1 border rounded focus:ring-blue-500 text-center">
                             </td>
                             
                             <!-- Crude Protein Input -->
                             <td class="px-3 py-2">
-                                <input type="number" id="m_cp_${item.id}" value="${item.cp.toFixed(2)}" min="0" step="0.01" class="w-full text-xs p-1 border rounded focus:ring-blue-500" ${isCalculable ? '' : 'disabled'}>
+                                <input type="number" id="m_cp_${item.id}" value="${item.cp.toFixed(2)}" min="0" step="0.01" class="w-full text-xs p-1 border rounded focus:ring-blue-500 text-center" ${isCalculable ? '' : 'disabled'}>
                             </td>
                             
                             <!-- ME Input -->
                             <td class="px-3 py-2">
-                                <input type="number" id="m_me_${item.id}" value="${item.me.toFixed(0)}" min="0" step="10" class="w-full text-xs p-1 border rounded focus:ring-blue-500" ${isCalculable ? '' : 'disabled'}>
+                                <input type="number" id="m_me_${item.id}" value="${item.me.toFixed(0)}" min="0" step="10" class="w-full text-xs p-1 border rounded focus:ring-blue-500 text-center" ${isCalculable ? '' : 'disabled'}>
                             </td>
                             
                             <!-- Calcium Input -->
                             <td class="px-3 py-2">
-                                <input type="number" id="m_ca_${item.id}" value="${item.ca.toFixed(2)}" min="0" step="0.01" class="w-full text-xs p-1 border rounded focus:ring-blue-500" ${isCalculable ? '' : 'disabled'}>
+                                <input type="number" id="m_ca_${item.id}" value="${item.ca.toFixed(2)}" min="0" step="0.01" class="w-full text-xs p-1 border rounded focus:ring-blue-500 text-center" ${isCalculable ? '' : 'disabled'}>
                             </td>
                             
                             <!-- Available P Input -->
                             <td class="px-3 py-2">
-                                <input type="number" id="m_p_${item.id}" value="${item.p.toFixed(2)}" min="0" step="0.01" class="w-full text-xs p-1 border rounded focus:ring-blue-500" ${isCalculable ? '' : 'disabled'}>
+                                <input type="number" id="m_p_${item.id}" value="${item.p.toFixed(2)}" min="0" step="0.01" class="w-full text-xs p-1 border rounded focus:ring-blue-500 text-center" ${isCalculable ? '' : 'disabled'}>
                             </td>
 
                             <!-- Mix Percentage Input (Editable for all) -->
                             <td class="px-3 py-2">
-                                <input type="number" id="m_mix_${item.id}" value="0.00" min="0" max="100" step="0.01" class="w-full text-sm font-semibold text-center p-1 border border-indigo-300 rounded focus:ring-indigo-500 focus:border-indigo-500">
+                                <input type="number" id="m_mix_${item.id}" value="0.00" min="0" max="100" step="0.01" class="w-full text-sm font-semibold text-center p-1 border border-indigo-300 rounded-lg focus:ring-pink-500 focus:border-pink-500">
                             </td>
                         </tr>`;
             });
@@ -975,8 +985,9 @@
                     return `<div class="flex items-start text-sm">${icon} <p>${w.message}</p></div>`;
                 }).join('');
                 
-                document.getElementById('m_recommendations').classList.remove('bg-yellow-50');
+                document.getElementById('m_recommendations').classList.remove('bg-yellow-50', 'border-yellow-300');
                 document.getElementById('m_recommendations').classList.add('bg-red-50', 'border-red-300');
+                document.querySelector('#m_recommendations h5').classList.remove('text-yellow-800');
                 document.querySelector('#m_recommendations h5').classList.add('text-red-800');
             } else {
                  recList.innerHTML = `<div class="flex items-start text-sm"><svg class="w-5 h-5 mt-1 mr-2 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><p>The mix is balanced against your targets. Focus on local cost optimization!</p></div>`;
@@ -1216,7 +1227,7 @@
 
             // 4. Weekly Schedule Table
             htmlContent += `<div class="mt-8 p-6 bg-white rounded-xl card-shadow print:break-inside-avoid">
-                <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center"><svg class="w-6 h-6 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>6-Week Production Schedule & Management Tasks</h2>
+                <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center"><svg class="w-6 h-6 mr-2 text-teal-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>6-Week Production Schedule & Management Tasks</h2>
                 <p class="text-sm text-gray-500 mb-4">The target values below are based on Cobb 500 performance standards for a ${targetWeightKg.toFixed(2)} kg market weight.</p>
                 <div class="space-y-6">`;
 
@@ -1251,31 +1262,31 @@
                 const pefBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${pefRating.bg} ${pefRating.color} border ${pefRating.border}">${pefRating.label}</span>`;
 
                 htmlContent += `
-                    <div class="border-4 border-green-500 rounded-xl p-4 bg-white card-shadow print:break-inside-avoid">
-                        <div class="flex justify-between items-center border-b pb-3 mb-3">
-                            <h3 class="text-2xl font-extrabold text-green-700">Week ${weekData.week} (${weekData.days})</h3>
-                            <span class="text-sm font-medium text-gray-500">Ends: ${formatDate(addDays(startDate, weekData.daysOffset))} (Day ${currentDay})</span>
+                    <div class="border-4 border-teal-500 rounded-xl p-4 bg-gray-50 card-shadow print:break-inside-avoid">
+                        <div class="flex justify-between items-center border-b pb-3 mb-3 bg-white p-3 -m-3 rounded-t-xl">
+                            <h3 class="text-2xl font-extrabold text-teal-700">Week ${weekData.week} (${weekData.days})</h3>
+                            <span class="text-sm font-medium text-gray-500">Ends: **${formatDate(addDays(startDate, weekData.daysOffset))}** (Day ${currentDay})</span>
                         </div>
                         
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 text-center">
-                            <div class="p-2 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Target Weight</p><p class="text-xl font-bold text-gray-800">${weekData.targetWeight_kg.toFixed(3)} kg</p><p class="text-xs text-gray-400">ADG: ${weekData.targetADG_g.toFixed(1)} g</p></div>
-                            <div class="p-2 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Cumulative Feed</p><p class="text-xl font-bold text-gray-800">${weekData.cumFeedPerBird_kg.toFixed(3)} kg/bird</p><p class="text-xs text-gray-400">Target FCR: ${targetFCR.toFixed(3)}</p></div>
-                            <div class="p-2 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Weekly Feed Total</p><p class="text-xl font-bold text-gray-800">${feedConsumptionLabel}</p><p class="text-xs text-gray-400">Avg Daily: ${weekData.avgDailyFeedPerBird_g} g/bird</p></div>
-                            <div class="p-2 bg-gray-50 rounded-lg"><p class="text-sm text-gray-500">Target PEF</p><p class="text-xl font-bold text-gray-800">${PEF.toFixed(0)}</p><p class="text-xs text-gray-400">${pefBadge}</p></div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 text-center mt-3">
+                            <div class="p-2 bg-white rounded-lg border border-gray-200"><p class="text-sm text-gray-500">Target Weight</p><p class="text-xl font-bold text-gray-800">${weekData.targetWeight_kg.toFixed(3)} kg</p><p class="text-xs text-gray-400">ADG: ${weekData.targetADG_g.toFixed(1)} g</p></div>
+                            <div class="p-2 bg-white rounded-lg border border-gray-200"><p class="text-sm text-gray-500">Cumulative Feed</p><p class="text-xl font-bold text-gray-800">${weekData.cumFeedPerBird_kg.toFixed(3)} kg/bird</p><p class="text-xs text-gray-400">Target FCR: ${targetFCR.toFixed(3)}</p></div>
+                            <div class="p-2 bg-white rounded-lg border border-gray-200"><p class="text-sm text-gray-500">Weekly Feed Total</p><p class="text-xl font-bold text-gray-800">${feedConsumptionLabel}</p><p class="text-xs text-gray-400">Avg Daily: ${weekData.avgDailyFeedPerBird_g} g/bird</p></div>
+                            <div class="p-2 bg-white rounded-lg border border-gray-200"><p class="text-sm text-gray-500">Target PEF</p><p class="text-xl font-bold text-gray-800">${PEF.toFixed(0)}</p><p class="text-xs text-gray-400">${pefBadge}</p></div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                             <!-- Management -->
-                            <div class="p-3 bg-white rounded-lg border border-gray-200">
-                                <h4 class="font-bold text-lg text-green-700 mb-2">Key Management & Vaccination</h4>
+                            <div class="p-3 bg-white rounded-lg border border-teal-300">
+                                <h4 class="font-bold text-lg text-teal-700 mb-2 border-b border-teal-200 pb-1">Key Management & Vaccination</h4>
                                 <ul class="space-y-1 text-sm text-gray-700 list-disc list-inside">
                                     ${weekData.tasks.map(task => `<li class="font-semibold text-gray-800">${task.day}: <span class="font-normal">${task.desc}</span></li>`).join('')}
                                 </ul>
                             </div>
 
                             <!-- Health & Threats -->
-                            <div class="p-3 bg-white rounded-lg border border-gray-200">
-                                <h4 class="font-bold text-lg text-green-700 mb-2">Health Prophylaxis & Risks</h4>
+                            <div class="p-3 bg-white rounded-lg border border-teal-300">
+                                <h4 class="font-bold text-lg text-teal-700 mb-2 border-b border-teal-200 pb-1">Health Prophylaxis & Risks</h4>
                                 <ul class="space-y-1 text-sm text-gray-700 list-disc list-inside">
                                     ${weekData.medicine.map(med => `<li class="font-semibold text-gray-800">${med.type}: <span class="font-normal">${med.desc}</span></li>`).join('')}
                                 </ul>
@@ -1296,17 +1307,22 @@
         // Re-adding the showTab function which is necessary for tab navigation
         function showTab(tabId) {
             // Remove active classes from all buttons and hide all content
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.add('hidden');
+                el.classList.remove('active-tab');
+            });
+
             // Remove all active/color classes from buttons first
             document.querySelectorAll('button[id^="tab-"]').forEach(el => {
-                el.classList.remove('text-white', 'bg-green-600', 'hover:bg-green-700', 'bg-purple-600', 'hover:bg-purple-700');
-                el.classList.add('text-gray-700', 'hover:bg-gray-100');
+                el.classList.remove('text-white', 'bg-green-600', 'hover:bg-green-700', 'bg-indigo-600', 'hover:bg-indigo-700', 'bg-purple-600', 'hover:bg-purple-700', 'font-semibold');
+                el.classList.add('text-gray-700', 'hover:bg-gray-100', 'font-medium');
             });
 
             // Show the target content (Now safe because the missing div was added to HTML)
             const activeContent = document.getElementById(tabId + '-tab-content');
             if (activeContent) {
                  activeContent.classList.remove('hidden');
+                 activeContent.classList.add('active-tab'); // Add a class to indicate active content
             } else {
                  console.error(`Tab content not found for ID: ${tabId}-tab-content`);
                  showNotification(`Error: Could not find content for tab "${tabId}".`);
@@ -1317,13 +1333,18 @@
             const activeButton = document.getElementById('tab-' + tabId);
             if (activeButton) {
                 // Determine color class strings
-                const colorClassString = (tabId === 'broiler-weather') ? 'bg-purple-600 hover:bg-purple-700' : 'bg-green-600 hover:bg-green-700';
+                let colorClassString = 'bg-green-600 hover:bg-green-700'; // Default for Production Plan
+                if (tabId === 'mixer') {
+                    colorClassString = 'bg-indigo-600 hover:bg-indigo-700';
+                } else if (tabId === 'broiler-weather') {
+                    colorClassString = 'bg-purple-600 hover:bg-purple-700';
+                }
                 
                 // FIX: Remove generic inactive classes
-                activeButton.classList.remove('text-gray-700', 'hover:bg-gray-100');
+                activeButton.classList.remove('text-gray-700', 'hover:bg-gray-100', 'font-medium');
                 
-                // FIX: Use spread operator on split string to safely pass multiple class tokens to add()
-                activeButton.classList.add('text-white', ...colorClassString.split(' ')); 
+                // Apply active styles
+                activeButton.classList.add('text-white', 'font-semibold', ...colorClassString.split(' ')); 
             }
             
             // Re-run rendering functions for relevant tabs
@@ -1357,7 +1378,8 @@
             if (!numChicks.value || parseInt(numChicks.value) < 1) {
                 document.getElementById(`${prefix}chicksError`).classList.remove('hidden'); isValid = false;
             }
-            if (!startDateEl.value || startDate < new Date()) {
+            // FIX: Removed check for date > new Date() to allow current date
+            if (!startDateEl.value) {
                 document.getElementById(`${prefix}dateError`).classList.remove('hidden'); isValid = false;
             }
             if (!targetWeightKg.value || parseFloat(targetWeightKg.value) < 0.5) {
@@ -1442,10 +1464,10 @@
             ROSS_LIGHTING_SCHEDULE.forEach(item => {
                 html += `
                     <tr class="hover:bg-gray-50 transition duration-100">
-                        <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${item.week} (${item.days})</td>
-                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${item.darkHours}</td>
-                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${item.lux}</td>
-                        <td class="px-3 py-2 text-sm text-gray-500">${item.goal}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${item.week} (${item.days})</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${item.darkHours}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${item.lux}</td>
+                        <td class="px-4 py-3 text-sm text-gray-500">${item.goal}</td>
                     </tr>
                 `;
             });
@@ -1457,16 +1479,16 @@
             let html = '';
             Object.values(feedFormulations).forEach(formula => {
                 html += `
-                    <div class="p-4 bg-green-50 rounded-xl border border-green-300 card-shadow">
-                        <h4 class="text-xl font-bold text-green-700 mb-2">${formula.label}</h4>
-                        <div class="grid grid-cols-2 gap-4">
+                    <div class="p-6 bg-white rounded-xl border border-teal-300 card-shadow hover:shadow-lg transition duration-200">
+                        <h4 class="text-xl font-bold text-teal-700 mb-3">${formula.label}</h4>
+                        <div class="grid grid-cols-2 gap-4 border-t pt-3">
                             <div>
-                                <p class="text-sm font-medium text-gray-700">Target Crude Protein (CP)</p>
-                                <p class="text-lg font-extrabold text-gray-900">${formula.crudeProtein}</p>
+                                <p class="text-sm font-medium text-gray-700">Crude Protein (CP)</p>
+                                <p class="text-lg font-extrabold text-teal-600">${formula.crudeProtein}</p>
                             </div>
                             <div>
-                                <p class="text-sm font-medium text-gray-700">Target Metabolizable Energy (ME)</p>
-                                <p class="text-lg font-extrabold text-gray-900">${formula.metabolizableEnergy}</p>
+                                <p class="text-sm font-medium text-gray-700">Metabolizable Energy (ME)</p>
+                                <p class="text-lg font-extrabold text-teal-600">${formula.metabolizableEnergy}</p>
                             </div>
                             <div>
                                 <p class="text-sm font-medium text-gray-700">Minimum Calcium (Ca)</p>
@@ -1477,7 +1499,7 @@
                                 <p class="text-lg font-extrabold text-gray-900">${formula.minP}</p>
                             </div>
                         </div>
-                        <p class="mt-4 text-sm font-semibold text-gray-600">Key Ingredients (Example):</p>
+                        <p class="mt-4 text-sm font-bold text-gray-600">Primary Focus Ingredients:</p>
                         <p class="text-sm text-gray-500">${formula.ingredients.join(', ')}</p>
                     </div>
                 `;
