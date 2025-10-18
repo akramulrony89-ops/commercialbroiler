@@ -556,7 +556,7 @@
         };
 
         const BROILER_MEDICINE_GUIDE = {
-            HEAT: [ { type: 'Electrolytes/Vit C', desc: 'Hydration and stress relief. **Ex: Square Vitalyte/ACI Power-Elect** (2g/L water).' }, { type: 'Liver/Kidney Support', desc: 'To manage metabolic load and Ascites risk. **Ex: Renata Nephrocare/SKF Livercare**.' }, { type: 'Management Buffer', desc: 'Add Sodium Bicarbonate to water (1-2 g/L) to counter respiratory alkalosis (panting).' } ],
+            HEAT: [ { type: 'Electrolytes/Vit C', desc: 'Hydration and stress relief. **Ex: Square Vitalyte/Renata Electrovit** (2g/L water).' }, { type: 'Liver/Kidney Support', desc: 'To manage metabolic load and Ascites risk. **Ex: Renata Nephrocare/SKF Livercare**.' }, { type: 'Management Buffer', desc: 'Add Sodium Bicarbonate to water (1-2 g/L) to counter respiratory alkalosis (panting).' } ],
             COLD: [ { type: 'Respiratory Support', desc: 'Prophylaxis against secondary infections (CRD risk). **Ex: Square Toxinil/Renata Doxy-Vet** (Vet prescription).' }, { type: 'Energy Supplement', desc: 'Glucose/Dextrose source to support metabolism. **Ex: Advent Glucovit**.' }, { type: 'Vaccine Support', desc: 'Ensure no cold water stress during vaccination periods.' } ],
             HUMIDITY: [ { type: 'Litter Management', desc: 'Increase minimum ventilation aggressively to drop moisture. Check for leaking drinkers.' }, { type: 'Health', desc: 'Monitor for Coccidiosis and Footpad Dermatitis due to wet litter.' } ],
             LOW_RH: [ { type: 'Dust/Respiratory', desc: 'Implement misting/fogging (in brooding phase only) to raise RH >50% and reduce dust. **Ex: Technodrug Brohexin-Vet** (for respiratory irritation).' } ],
@@ -1126,6 +1126,9 @@
                 
                 document.getElementById('results-container').innerHTML = htmlContent;
                 
+                // --- FIX: Ensure results visibility is handled after generation ---
+                toggleResultsVisibility(true);
+
                 toggleLoading(prefix, false, 'Generate Broiler Plan');
             }, 800);
         }
@@ -1355,6 +1358,27 @@
             } else if (tabId === 'mixer') {
                 setupFeedMixerTab();
             }
+            
+            // --- FIX: Manage results container visibility based on tab ---
+            toggleResultsVisibility(tabId === 'broiler');
+        }
+        
+        /**
+         * Toggles the visibility of the main results container and download button.
+         * @param {boolean} isVisible If true, show results; otherwise hide.
+         */
+        function toggleResultsVisibility(isVisible) {
+            const resultsContainer = document.getElementById('results-container');
+            const downloadWrapper = document.getElementById('download-btn-wrapper');
+            
+            if (resultsContainer) {
+                resultsContainer.classList.toggle('hidden', !isVisible);
+            }
+            if (downloadWrapper) {
+                 // Only show download button if results are visible AND results are generated (not just initial message)
+                 const hasGeneratedContent = resultsContainer && !resultsContainer.innerHTML.includes('initial-message');
+                 downloadWrapper.classList.toggle('hidden', !(isVisible && hasGeneratedContent));
+            }
         }
         
         // --- Input Validation and Loading Toggles ---
@@ -1525,6 +1549,9 @@
             // setupFeedMixerTab() is now called by showTab('mixer') logic.
             calculateLightRequirement();
             showTab('broiler'); // Default to Production Plan tab
+            
+            // FIX: Hide download button and ensure results container is hidden initially if no data exists
+            toggleResultsVisibility(false);
         }
 
         window.onload = initApp;
@@ -1599,7 +1626,8 @@
              if (resultsContainer) {
                  const downloadBtnWrapper = document.createElement('div');
                  downloadBtnWrapper.id = 'download-btn-wrapper';
-                 downloadBtnWrapper.className = 'text-center mt-8 print:hidden';
+                 // Ensure it is hidden by default
+                 downloadBtnWrapper.className = 'text-center mt-8 print:hidden hidden'; 
                  downloadBtnWrapper.innerHTML = `
                      <button onclick="exportToPDF()" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition duration-200 shadow-md transform hover:scale-[1.01] flex items-center justify-center mx-auto">
                          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
